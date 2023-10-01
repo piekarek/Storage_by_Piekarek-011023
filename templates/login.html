@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="title">Login</h2>
+
+    {% if get_flashed_messages() %}
+        <div class="notification is-danger">
+            {{ get_flashed_messages()[0] }}
+        </div>
+    {% endif %}
+
+    <form action="{{ url_for('auth.login') }}" method="post">
+        <div class="field">
+            <label class="label">E-Mail</label>
+            <div class="control">
+                <input class="input" type="text" name="email" placeholder="E-Mail" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Passwort</label>
+            <div class="control">
+                <input class="input" type="password" name="password" placeholder="Passwort" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <label class="checkbox">
+                    <input type="checkbox" name="remember">
+                    Angemeldet bleiben
+                </label>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <button type="submit" class="button is-link">Login</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
