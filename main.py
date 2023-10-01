@@ -2,6 +2,12 @@ from flask import Flask, render_template
 from flask_login import LoginManager, login_required, current_user
 from models import User, db
 from auth import auth
+from flask_migrate import Migrate, upgrade, init
+import os
+from flask_mail import Mail
+
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -13,11 +19,24 @@ def create_app():
 
     # Datenbank-Initialisierung
     db.init_app(app)
+    migrate = Migrate(app, db)
 
     # Login-Manager-Initialisierung
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
+
+    # E-Mail-Konfiguration
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'bypiekarek@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'ccfz kujg ssqo djbf'
+
+    # Initialisieren Sie die Mail-Erweiterung
+    mail = Mail(app)
+
+
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -39,7 +58,26 @@ def create_app():
     def create_db():
         with app.app_context():
             db.create_all()
-        return "Datenbank erstellt!"
+            return "Datenbank erstellt!"
+
+    @app.route('/migrate')
+    def migrate_db():
+        # Initialisiert Migrationsverzeichnisse, wenn sie noch nicht existieren
+        if not os.path.exists(os.path.join(os.path.dirname(__file__), 'migrations')):
+            init(directory=os.path.join(os.path.dirname(__file__), 'migrations'))
+
+        # Führt die Migration aus
+        with app.app_context():
+            upgrade()
+
+        # Optional: Überprüfen, ob ein Admin-Konto existiert und erstellen Sie eines, wenn nicht
+        if not User.query.filter_by(is_admin=True).first():
+            admin = User(email="admin@example.com", name="Admin", is_approved=True, is_admin=True)
+            admin.set_password("admin123")
+            db.session.add(admin)
+            db.session.commit()
+
+        return "Migration durchgeführt und Datenbank aktualisiert!"
 
     return app
 

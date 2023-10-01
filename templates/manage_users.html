@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Benutzerverwaltung</h2>
+<table class="table is-fullwidth">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Genehmigt</th>
+            <th>Admin</th>
+            <th>Aktionen</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.is_approved }}</td>
+            <td>{{ user.is_admin }}</td>
+            <td>
+                <form action="{{ url_for('auth.toggle_approval', user_id=user.id) }}" method="post">
+                    <button type="submit">
+                        {% if user.is_approved %}
+                            Nicht genehmigen
+                        {% else %}
+                            Genehmigen
+                        {% endif %}
+                    </button>
+                </form>
+
+                <form action="{{ url_for('auth.toggle_admin', user_id=user.id) }}" method="post">
+                    <button type="submit">
+                        {% if user.is_admin %}
+                            Als Normalbenutzer festlegen
+                        {% else %}
+                            Als Admin festlegen
+                        {% endif %}
+                    </button>
+                </form>
+
+                <form action="{{ url_for('auth.delete_user', user_id=user.id) }}" method="post">
+                    <button type="submit">Benutzer löschen</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
