@@ -128,7 +128,9 @@ def reset_password_request():
 '''
             mail.send(msg)
             flash('An email has been sent with instructions to reset your password.', 'info')
-            return redirect(url_for('auth.login'))
+        else:
+            flash('Email not found in the database.', 'danger')
+        return redirect(url_for('auth.login'))
     return render_template('reset_password_request.html')
 
 @auth.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -139,8 +141,13 @@ def reset_password(token):
         return redirect(url_for('auth.login'))
     if request.method == 'POST':
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        if password != confirm_password:
+            flash('Passwords do not match!', 'danger')
+            return redirect(url_for('auth.reset_password', token=token))
         user.set_password(password)
         db.session.commit()
         flash('Your password has been updated!', 'success')
         return redirect(url_for('auth.login'))
-    return render_template('reset_password.html')
+    return render_template('reset_password.html', token=token)
+

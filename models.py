@@ -31,7 +31,8 @@ class User(db.Model, UserMixin):
 
     @staticmethod
     def verify_reset_token(token):
-        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
         try:
             user_id = s.loads(token, salt='password-reset-salt', max_age=1800)['user_id']
         except:
