@@ -14,20 +14,20 @@ mail = Mail()
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))  # Redirect to the main index if already logged in
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         remember = True if request.form.get('remember') else False
-
         user = User.query.filter_by(email=email).first()
-
         if not user or not user.check_password(password):
-            flash('Please check your login details and try again.')
+            flash('Please check your login details and try again.', 'danger')
             return redirect(url_for('auth.login'))
-
         login_user(user, remember=remember)
-        return redirect(url_for('profile'))
+        return redirect(url_for('index'))  # Redirect to the main index after successful login
     return render_template('login.html')
+
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -150,4 +150,32 @@ def reset_password(token):
         flash('Your password has been updated!', 'success')
         return redirect(url_for('auth.login'))
     return render_template('reset_password.html', token=token)
+
+@auth.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
+
+    # Check if email already exists and is not the current user's email
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user and existing_user.id != current_user.id:
+        flash('This email is already associated with another account.', 'danger')
+        return redirect(url_for('auth.profile'))
+
+    # Check if new password fields are filled and match
+    if password and confirm_password and password == confirm_password:
+        current_user.set_password(password)
+    elif password or confirm_password:
+        flash('Passwords do not match!', 'danger')
+        return redirect(url_for('auth.profile'))
+
+    current_user.name = name
+    current_user.email = email
+    db.session.commit()
+
+    flash('Profile updated successfully!', 'success')
+    return redirect(url_for('auth.profile'))
 
