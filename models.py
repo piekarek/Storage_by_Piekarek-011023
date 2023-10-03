@@ -3,6 +3,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired
 
 
 
@@ -39,3 +42,14 @@ class User(db.Model, UserMixin):
             return None
         return User.query.get(user_id)
 
+class Primer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    application = db.Column(db.String(100), nullable=False)
+    pcr = db.Column(db.String(100), nullable=True)
+    target = db.Column(db.String(100), nullable=True)
+    oligos = db.Column(db.String(100), nullable=True)
+    sequence = db.Column(db.String(255), nullable=True)
+    box = db.Column(db.String(100), nullable=True)
+    position = db.Column(db.String(100), nullable=True)
+    reference = db.Column(db.String(255), nullable=True)
+    comment = db.Column(db.Text, nullable=True)

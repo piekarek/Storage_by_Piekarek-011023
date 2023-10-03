@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="custom-heading">Edit Primer</h2>
+<form action="{{ url_for('edit_primer', primer_id=primer.id) }}" method="post">
+    {{ form.hidden_tag() }}
+    <div class="field">
+        <label class="label">Application</label>
+        <div class="control">
+            {{ form.application(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">PCR</label>
+        <div class="control">
+            {{ form.pcr(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Target</label>
+        <div class="control">
+            {{ form.target(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Oligos</label>
+        <div class="control">
+            {{ form.oligos(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Sequence</label>
+        <div class="control">
+            {{ form.sequence(class="textarea") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Box</label>
+        <div class="control">
+            {{ form.box(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Position</label>
+        <div class="control">
+            {{ form.position(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Reference</label>
+        <div class="control">
+            {{ form.reference(class="input") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">Comment</label>
+        <div class="control">
+            {{ form.comment(class="textarea") }}
+        </div>
+    </div>
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-primary">Update Primer</button>
+        </div>
+        <div class="control">
+            <a href="{{ url_for('primers') }}" class="button is-light">Abbrechen</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

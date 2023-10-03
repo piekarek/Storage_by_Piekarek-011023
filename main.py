@@ -5,6 +5,10 @@ from auth import auth
 from flask_migrate import Migrate, upgrade, init
 import os
 from flask_mail import Mail
+from models import Primer, db
+from forms import PrimerForm
+from flask import *
+
 
 
 
@@ -79,6 +83,55 @@ def create_app():
             db.session.commit()
 
         return "Migration durchgeführt und Datenbank aktualisiert!"
+
+    @app.route('/add_primer', methods=['GET', 'POST'])
+    @login_required
+    def add_primer():
+        form = PrimerForm()
+        if form.validate_on_submit():
+            primer = Primer(
+                application=form.application.data,
+                pcr=form.pcr.data,
+                target=form.target.data,
+                oligos=form.oligos.data,
+                sequence=form.sequence.data,
+                box=form.box.data,
+                position=form.position.data,
+                reference=form.reference.data,
+                comment=form.comment.data
+            )
+            db.session.add(primer)
+            db.session.commit()
+            flash('Primer added successfully!', 'success')
+            return redirect(url_for('index'))
+        return render_template('add_primer.html', form=form)
+
+    @app.route('/primers')
+    @login_required
+    def primers():
+        all_primers = Primer.query.all()
+        return render_template('primers.html', primers=all_primers)
+
+    @app.route('/edit_primer/<int:primer_id>', methods=['GET', 'POST'])
+    @login_required
+    def edit_primer(primer_id):
+        primer = Primer.query.get_or_404(primer_id)
+        form = PrimerForm(obj=primer)
+        if form.validate_on_submit():
+            primer.application = form.application.data
+            primer.pcr = form.pcr.data
+            primer.target = form.target.data
+            primer.oligos = form.oligos.data
+            primer.sequence = form.sequence.data
+            primer.box = form.box.data
+            primer.position = form.position.data
+            primer.reference = form.reference.data
+            primer.comment = form.comment.data
+            db.session.commit()
+            flash('Primer updated successfully!', 'success')
+            return redirect(url_for('primers'))
+        return render_template('edit_primer.html', form=form, primer=primer)
+
 
     return app
 

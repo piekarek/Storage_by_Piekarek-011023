@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 class="is-size-5 custom-heading">Primers</h2>
+    <table class="table is-fullwidth is-striped is-spaced is-hoverable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Anwendung</th>
+                <th>PCR</th>
+                <th>Ziel</th>
+                <th>Oligos</th>
+                <th>Sequenz</th>
+                <th>Box</th>
+                <th>Position</th>
+                <th>Referenz</th>
+                <th>Kommentar</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for primer in primers %}
+            <tr>
+                <td>{{ primer.id }}</td>
+                <td>{{ primer.application }}</td>
+                <td>{{ primer.pcr }}</td>
+                <td>{{ primer.target }}</td>
+                <td>{{ primer.oligos }}</td>
+                <td>{{ primer.sequence }}</td>
+                <td>{{ primer.box }}</td>
+                <td>{{ primer.position }}</td>
+                <td>{{ primer.reference }}</td>
+                <td>{{ primer.comment }}</td>
+                <td>
+                    <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
