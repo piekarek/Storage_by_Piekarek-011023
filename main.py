@@ -103,7 +103,7 @@ def create_app():
             db.session.add(primer)
             db.session.commit()
             flash('Primer added successfully!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('primers'))
         return render_template('add_primer.html', form=form)
 
     @app.route('/primers')
@@ -132,6 +132,18 @@ def create_app():
             return redirect(url_for('primers'))
         return render_template('edit_primer.html', form=form, primer=primer)
 
+    @app.route('/delete_primers', methods=['POST'])
+    @login_required
+    def delete_primers():
+        ids_to_delete = request.json.get('ids', [])
+        try:
+            # Löschen Sie die Primer basierend auf den übermittelten IDs
+            Primer.query.filter(Primer.id.in_(ids_to_delete)).delete(synchronize_session='fetch')
+            db.session.commit()
+            return jsonify(success=True)
+        except Exception as e:
+            # Im Fehlerfall senden Sie eine Fehlermeldung zurück
+            return jsonify(success=False, message=str(e))
 
     return app
 

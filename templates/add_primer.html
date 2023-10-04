@@ -1,59 +1,70 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Add New Primer</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-
-        <div class="form-group">
-            {{ form.application.label }}<br>
-            {{ form.application(class="form-control") }}
+<h2 class="custom-heading">Add Primer</h2>
+<form action="{{ url_for('add_primer') }}" method="post">
+    {{ form.hidden_tag() }}
+    <div class="field">
+        <label class="label">Application</label>
+        <div class="control">
+            {{ form.application(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.pcr.label }}<br>
-            {{ form.pcr(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">PCR</label>
+        <div class="control">
+            {{ form.pcr(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.target.label }}<br>
-            {{ form.target(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Target</label>
+        <div class="control">
+            {{ form.target(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.oligos.label }}<br>
-            {{ form.oligos(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Oligos</label>
+        <div class="control">
+            {{ form.oligos(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.sequence.label }}<br>
-            {{ form.sequence(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Sequence</label>
+        <div class="control">
+            {{ form.sequence(class="textarea") }}
         </div>
-
-        <div class="form-group">
-            {{ form.box.label }}<br>
-            {{ form.box(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Box</label>
+        <div class="control">
+            {{ form.box(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.position.label }}<br>
-            {{ form.position(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Position</label>
+        <div class="control">
+            {{ form.position(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.reference.label }}<br>
-            {{ form.reference(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Reference</label>
+        <div class="control">
+            {{ form.reference(class="input") }}
         </div>
-
-        <div class="form-group">
-            {{ form.comment.label }}<br>
-            {{ form.comment(class="form-control") }}
+    </div>
+    <div class="field">
+        <label class="label">Comment</label>
+        <div class="control">
+            {{ form.comment(class="textarea") }}
         </div>
-
-        <div class="form-group">
-            {{ form.submit(class="btn btn-primary") }}
+    </div>
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-primary">Add Primer</button>
         </div>
-    </form>
-</div>
+        <div class="control">
+            <a href="{{ url_for('primers') }}" class="button is-light">Abbrechen</a>
+        </div>
+    </div>
+</form>
 {% endblock %}
