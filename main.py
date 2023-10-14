@@ -1,23 +1,18 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from flask_login import LoginManager, login_required, current_user
-from models import User, db
+from models import User, Primer, PrimerList, db
 from auth import auth
 from flask_migrate import Migrate, upgrade, init
 import os
 from flask_mail import Mail
-from models import Primer, db
 from forms import PrimerForm
-from flask import *
-
-
-
-
+from models import PrimerList
 
 def create_app():
     app = Flask(__name__)
 
     # App-Konfiguration
-    app.config['SECRET_KEY'] = 'your_secret_key_here'  # Ändern Sie dies in einem echten Projekt!
+    app.config['SECRET_KEY'] = 'your_secret_key_here'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -30,7 +25,6 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
-
     # E-Mail-Konfiguration
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
@@ -38,16 +32,12 @@ def create_app():
     app.config['MAIL_USERNAME'] = 'bypiekarek@gmail.com'
     app.config['MAIL_PASSWORD'] = 'ccfz kujg ssqo djbf'
 
-    # Initialisieren Sie die Mail-Erweiterung
     mail = Mail(app)
-
-
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # Blueprints registrieren
     app.register_blueprint(auth)
 
     @app.route('/')
@@ -67,15 +57,12 @@ def create_app():
 
     @app.route('/migrate')
     def migrate_db():
-        # Initialisiert Migrationsverzeichnisse, wenn sie noch nicht existieren
         if not os.path.exists(os.path.join(os.path.dirname(__file__), 'migrations')):
             init(directory=os.path.join(os.path.dirname(__file__), 'migrations'))
 
-        # Führt die Migration aus
         with app.app_context():
             upgrade()
 
-        # Optional: Überprüfen, ob ein Admin-Konto existiert und erstellen Sie eines, wenn nicht
         if not User.query.filter_by(is_admin=True).first():
             admin = User(email="admin@example.com", name="Admin", is_approved=True, is_admin=True)
             admin.set_password("admin123")
@@ -112,6 +99,28 @@ def create_app():
         all_primers = Primer.query.all()
         return render_template('primers.html', primers=all_primers)
 
+    @app.route('/get_primer_lists', methods=['GET'])
+    @login_required
+    def get_primer_lists():
+        user_lists = PrimerList.query.filter_by(user_id=current_user.id).all()
+        return jsonify({"primerLists": [list.name for list in user_lists]})
+
+    @app.route('/add_primer_list', methods=['POST'])
+    @login_required
+    def add_primer_list():
+        list_name = request.form.get('list_name')
+        if not list_name:
+            return jsonify(success=False, message="List name is required"), 400
+
+        existing_list = PrimerList.query.filter_by(name=list_name, user_id=current_user.id).first()
+        if existing_list:
+            return jsonify(success=False, message="List with this name already exists"), 400
+
+        primer_list = PrimerList(name=list_name, user_id=current_user.id)
+        db.session.add(primer_list)
+        db.session.commit()
+        return jsonify(success=True, message="Primer list added successfully")
+
     @app.route('/edit_primer/<int:primer_id>', methods=['GET', 'POST'])
     @login_required
     def edit_primer(primer_id):
@@ -137,15 +146,27 @@ def create_app():
     def delete_primers():
         ids_to_delete = request.json.get('ids', [])
         try:
-            # Löschen Sie die Primer basierend auf den übermittelten IDs
             Primer.query.filter(Primer.id.in_(ids_to_delete)).delete(synchronize_session='fetch')
             db.session.commit()
             return jsonify(success=True)
         except Exception as e:
-            # Im Fehlerfall senden Sie eine Fehlermeldung zurück
             return jsonify(success=False, message=str(e))
 
     return app
+
+    @app.route('/create_primer_list', methods=['POST'])
+    @login_required
+    def create_primer_list():
+        try:
+            data = request.get_json()
+            new_list = PrimerList(name=data['name'], user_id=current_user.id)
+            db.session.add(new_list)
+            db.session.commit()
+            return jsonify(success=True)
+        except Exception as e:
+            return jsonify(success=False, message=str(e))
+
+
 
 app = create_app()
 

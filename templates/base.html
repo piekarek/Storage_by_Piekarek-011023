@@ -45,6 +45,23 @@
             margin-left: 400px;
             margin-top: 15px;
         }
+.content-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* sorgt dafür, dass die Sidebar und die Tabelle oben beginnen */
+}
+
+.primer-lists-sidebar {
+    flex: 0 0 240px; /* gibt der Sidebar eine feste Breite von 240px */
+    margin-right: 20px; /* etwas Abstand zwischen der Sidebar und der Tabelle */
+    padding: 10px;
+    background-color: #f5f5f5; /* optional: fügt einen Hintergrund zur Sidebar hinzu */
+    border-radius: 8px; /* optional: rundet die Ecken der Sidebar ab */
+}
+
+.primer-table-container {
+    flex: 1; /* nutzt den verbleibenden Raum */
+}
 
 
     </style>

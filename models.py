@@ -7,9 +7,6 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired
 
-
-
-
 db = SQLAlchemy()
 
 class User(db.Model, UserMixin):
@@ -20,7 +17,6 @@ class User(db.Model, UserMixin):
     is_approved = db.Column(db.Boolean, default=False, nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
-
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -29,13 +25,11 @@ class User(db.Model, UserMixin):
 
     def get_reset_token(self, expires_sec=1800):
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-
         return s.dumps({'user_id': self.id}, salt='password-reset-salt')
 
     @staticmethod
     def verify_reset_token(token):
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-
         try:
             user_id = s.loads(token, salt='password-reset-salt', max_age=1800)['user_id']
         except:
@@ -53,3 +47,16 @@ class Primer(db.Model):
     position = db.Column(db.String(100), nullable=True)
     reference = db.Column(db.String(255), nullable=True)
     comment = db.Column(db.Text, nullable=True)
+
+# Association table for the many-to-many relationship between Primers and PrimerLists
+primer_list_association = db.Table('primer_list_association',
+    db.Column('primer_id', db.Integer, db.ForeignKey('primer.id')),
+    db.Column('primer_list_id', db.Integer, db.ForeignKey('primer_list.id'))
+)
+
+class PrimerList(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    visibility = db.Column(db.String(50), default="private")  # "private" or "public"
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Owner of the list
+    primers = db.relationship("Primer", secondary=primer_list_association, backref=db.backref('lists', lazy='dynamic'))
