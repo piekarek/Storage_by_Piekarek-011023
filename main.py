@@ -102,24 +102,42 @@ def create_app():
     @app.route('/get_primer_lists', methods=['GET'])
     @login_required
     def get_primer_lists():
-        user_lists = PrimerList.query.filter_by(user_id=current_user.id).all()
-        return jsonify({"primerLists": [list.name for list in user_lists]})
+        # Get private lists of the current user
+        private_lists = PrimerList.query.filter_by(user_id=current_user.id, visibility='private').all()
 
-    @app.route('/add_primer_list', methods=['POST'])
+        # Get public lists of all users
+        public_lists = PrimerList.query.filter_by(visibility='public').all()
+
+        # Convert the lists to a format suitable for sending as JSON
+        private_lists_data = [{"id": lst.id, "name": lst.name, "visibility": lst.visibility} for lst in private_lists]
+        public_lists_data = [{"id": lst.id, "name": lst.name, "visibility": lst.visibility} for lst in public_lists]
+
+        return jsonify(private_lists=private_lists_data, public_lists=public_lists_data)
+
+    @app.route('/create_primer_list', methods=['POST'])
     @login_required
-    def add_primer_list():
-        list_name = request.form.get('list_name')
-        if not list_name:
-            return jsonify(success=False, message="List name is required"), 400
+    def create_primer_list():
+        try:
+            data = request.get_json()
+            new_list = PrimerList(name=data['name'], user_id=current_user.id, visibility=data['visibility'])
+            db.session.add(new_list)
+            db.session.commit()
+            return jsonify(success=True)
+        except Exception as e:
+            return jsonify(success=False, message=str(e))
 
-        existing_list = PrimerList.query.filter_by(name=list_name, user_id=current_user.id).first()
-        if existing_list:
-            return jsonify(success=False, message="List with this name already exists"), 400
-
-        primer_list = PrimerList(name=list_name, user_id=current_user.id)
-        db.session.add(primer_list)
-        db.session.commit()
-        return jsonify(success=True, message="Primer list added successfully")
+    @app.route('/delete_primer_list/<int:list_id>', methods=['DELETE'])
+    @login_required
+    def delete_primer_list(list_id):
+        try:
+            list_to_delete = PrimerList.query.get(list_id)
+            if not list_to_delete:
+                return jsonify(success=False, message="Liste nicht gefunden")
+            db.session.delete(list_to_delete)
+            db.session.commit()
+            return jsonify(success=True)
+        except Exception as e:
+            return jsonify(success=False, message=str(e))
 
     @app.route('/edit_primer/<int:primer_id>', methods=['GET', 'POST'])
     @login_required
@@ -153,20 +171,6 @@ def create_app():
             return jsonify(success=False, message=str(e))
 
     return app
-
-    @app.route('/create_primer_list', methods=['POST'])
-    @login_required
-    def create_primer_list():
-        try:
-            data = request.get_json()
-            new_list = PrimerList(name=data['name'], user_id=current_user.id)
-            db.session.add(new_list)
-            db.session.commit()
-            return jsonify(success=True)
-        except Exception as e:
-            return jsonify(success=False, message=str(e))
-
-
 
 app = create_app()
 

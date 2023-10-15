@@ -57,6 +57,7 @@ primer_list_association = db.Table('primer_list_association',
 class PrimerList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    visibility = db.Column(db.String(50), default="private")  # "private" or "public"
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Owner of the list
-    primers = db.relationship("Primer", secondary=primer_list_association, backref=db.backref('lists', lazy='dynamic'))
+    visibility = db.Column(db.String(50), default='private', nullable=False)  # Add this line for visibility
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    primers = db.relationship('Primer', secondary=primer_list_association, lazy='subquery',
+                              backref=db.backref('lists', lazy=True))

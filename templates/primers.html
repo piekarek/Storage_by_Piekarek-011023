@@ -1,80 +1,82 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2 class="is-size-5 custom-heading">Primers</h2>
-    <div class="content-wrapper">
-        <!-- Sidebar for displaying Primer Lists -->
-        <aside class="primer-lists-sidebar menu">
-            <p class="menu-label">
-                Primer-Listen
-            </p>
-            <ul class="menu-list" id="primerLists">
-                <!-- The lists will be dynamically populated here using JavaScript -->
-            </ul>
-            <!-- Added functionality for creating and managing user lists -->
-            <div class="field has-addons">
-                <div class="control">
-                    <input class="input" type="text" placeholder="Neue Liste" id="newListName">
-                </div>
-                <div class="control">
-                    <button class="button is-success" id="createNewListButton">Erstellen</button>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Primers Table -->
-        <div class="primer-table-container">
-            <div class="buttons">
-                <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
-                <button id="delete-button" class="button is-danger">Löschen</button>
-                <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
-
-            </div>
-            <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
-                <thead>
-                    <tr>
-                        <th style="text-align:center;"><input type="checkbox" id="select-all"></th>
-                        <th>ID</th>
-                        <th>Anwendung</th>
-                        <th>PCR</th>
-                        <th>Ziel</th>
-                        <th>Oligos</th>
-                        <th>Sequenz</th>
-                        <th>Box</th>
-                        <th>Position</th>
-                        <th>Referenz</th>
-                        <th>Kommentar</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for primer in primers %}
-                    <tr>
-                        <td style="text-align:center;"><input type="checkbox" class="primer-checkbox" value="{{ primer.id }}"></td>
-                        <td>{{ primer.id }}</td>
-                        <td>{{ primer.application }}</td>
-                        <td>{{ primer.pcr }}</td>
-                        <td>{{ primer.target }}</td>
-                        <td>{{ primer.oligos }}</td>
-                        <td>{{ primer.sequence }}</td>
-                        <td>{{ primer.box }}</td>
-                        <td>{{ primer.position }}</td>
-                        <td>{{ primer.reference }}</td>
-                        <td>{{ primer.comment }}</td>
-                        <td>
-                            <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<h2 class="is-size-5 custom-heading">Primers</h2>
+<div class="content-wrapper">
+    <!-- Sidebar for displaying Primer Lists -->
+    <aside class="primer-lists-sidebar menu">
+        <p class="menu-label">
+            Primer-Listen
+        </p>
+        <ul class="menu-list" id="primerLists"></ul>
+        <div class="field">
+            <input class="input" type="text" placeholder="Neue Liste" id="newListName">
         </div>
+        <div class="field">
+            <label class="radio">
+                <input type="radio" name="listVisibility" value="private" checked> Privat
+            </label>
+            <label class="radio">
+                <input type="radio" name="listVisibility" value="public"> Öffentlich
+            </label>
+        </div>
+        <div class="field">
+            <button class="button is-success" id="createNewListButton">Erstellen</button>
+        </div>
+    </aside>
+
+    <!-- Primers Table -->
+    <div class="primer-table-container">
+        <div class="buttons">
+            <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
+            <button id="delete-button" class="button is-danger">Löschen</button>
+            <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
+        </div>
+        <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
+            <thead>
+                <tr>
+                    <th style="text-align:center;"><input type="checkbox" id="select-all"></th>
+                    <th>ID</th>
+                    <th>Anwendung</th>
+                    <th>PCR</th>
+                    <th>Ziel</th>
+                    <th>Oligos</th>
+                    <th>Sequenz</th>
+                    <th>Box</th>
+                    <th>Position</th>
+                    <th>Referenz</th>
+                    <th>Kommentar</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for primer in primers %}
+                <tr>
+                    <td style="text-align:center;"><input type="checkbox" class="primer-checkbox" value="{{ primer.id }}"></td>
+                    <td>{{ primer.id }}</td>
+                    <td>{{ primer.application }}</td>
+                    <td>{{ primer.pcr }}</td>
+                    <td>{{ primer.target }}</td>
+                    <td>{{ primer.oligos }}</td>
+                    <td>{{ primer.sequence }}</td>
+                    <td>{{ primer.box }}</td>
+                    <td>{{ primer.position }}</td>
+                    <td>{{ primer.reference }}</td>
+                    <td>{{ primer.comment }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</div>
 {% endblock %}
+
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // DataTable initialisieren
         const dataTable = $('#primers-table').DataTable({
             lengthMenu: [[10, 25, 50, 100, 150, 200, 500, -1], [10, 25, 50, 100, 150, 200, 500, "Alle"]],
             displayLength: 100,
@@ -89,16 +91,9 @@
                 { extend: 'print', text: 'Drucken' }
             ],
             columnDefs: [ { orderable: false, targets: [0, 11] }, { visible: false, targets: [1] } ],
-            order: [[5, 'asc']] // Standard-Sortierung auf das "Oligos"-Feld
+            order: [[5, 'asc']]
         });
 
-
-        // Event listener for the manual search box
-        document.getElementById('manualSearchBox').addEventListener('keyup', function() {
-            dataTable.search(this.value).draw();
-        });
-
-        // Checkbox-Verhalten
         document.getElementById('select-all').addEventListener('click', function() {
             var checkboxes = dataTable.$('.primer-checkbox');
             var isChecked = this.checked;
@@ -107,12 +102,30 @@
             });
         });
 
-        // Verhindert das Erscheinen des Cursors in der Tabelle
         document.getElementById('primers-table').addEventListener('mousedown', function(event) {
             event.preventDefault();
         }, false);
 
-        // Load the available Primer Lists for the user
+        function deletePrimerList(listId) {
+            if (confirm("Möchten Sie diese Liste wirklich löschen?")) {
+                fetch('/delete_primer_list/' + listId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Liste erfolgreich gelöscht!');
+                        loadPrimerLists();
+                    } else {
+                        alert('Fehler beim Löschen der Liste: ' + data.message);
+                    }
+                });
+            }
+        }
+
         function loadPrimerLists() {
             fetch('/get_primer_lists', {
                 method: 'GET',
@@ -123,23 +136,44 @@
             .then(response => response.json())
             .then(data => {
                 const primerListsContainer = document.getElementById('primerLists');
-                primerListsContainer.innerHTML = '';
+                primerListsContainer.innerHTML = '<li><b>PRIMER STOCK</b></li><li>Alle</li>';
 
-                // Populate the container with the received Primer Lists
-                data.primerLists.forEach(list => {
+                primerListsContainer.innerHTML += '<br><li><b>Öffentlich</b></li>';
+                data.public_lists.forEach(list => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = list.name;
+                    const deleteIcon = document.createElement('span');
+                    deleteIcon.innerHTML = '🗑️';
+                    deleteIcon.style.cursor = 'pointer';
+                    deleteIcon.addEventListener('click', function() {
+                        deletePrimerList(list.id);
+                    });
+                    listItem.textContent = list.name + ' ';
+                    listItem.appendChild(deleteIcon);
+                    primerListsContainer.appendChild(listItem);
+                });
+
+                primerListsContainer.innerHTML += '<br><li><b>Privat</b></li>';
+                data.private_lists.forEach(list => {
+                    const listItem = document.createElement('li');
+                    const deleteIcon = document.createElement('span');
+                    deleteIcon.innerHTML = '🗑️';
+                    deleteIcon.style.cursor = 'pointer';
+                    deleteIcon.addEventListener('click', function() {
+                        deletePrimerList(list.id);
+                    });
+                    listItem.textContent = list.name + ' ';
+                    listItem.appendChild(deleteIcon);
                     primerListsContainer.appendChild(listItem);
                 });
             });
         }
 
-        // Call the function to load the Primer Lists when the page loads
         loadPrimerLists();
 
-        // Added functionality for creating new lists
         document.getElementById('createNewListButton').addEventListener('click', function() {
             const newListName = document.getElementById('newListName').value;
+            const visibility = document.querySelector('input[name="listVisibility"]:checked').value;
+
             if (!newListName) {
                 alert('Bitte geben Sie einen Namen für die neue Liste ein.');
                 return;
@@ -150,7 +184,10 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({name: newListName})
+                body: JSON.stringify({
+                    name: newListName,
+                    visibility: visibility
+                })
             })
             .then(response => response.json())
             .then(data => {
