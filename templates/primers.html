@@ -2,7 +2,6 @@
 
 {% block content %}
     <h2 class="is-size-5 custom-heading">Primers</h2>
-
     <div class="content-wrapper">
         <!-- Sidebar for displaying Primer Lists -->
         <aside class="primer-lists-sidebar menu">
@@ -29,8 +28,8 @@
                 <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
                 <button id="delete-button" class="button is-danger">Löschen</button>
                 <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
-            </div>
 
+            </div>
             <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
                 <thead>
                     <tr>
@@ -72,7 +71,6 @@
         </div>
     </div>
 {% endblock %}
-
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -80,7 +78,7 @@
         const dataTable = $('#primers-table').DataTable({
             lengthMenu: [[10, 25, 50, 100, 150, 200, 500, -1], [10, 25, 50, 100, 150, 200, 500, "Alle"]],
             displayLength: 100,
-            dom: "<'row'<'col-sm-12'B>>" +
+            dom: "<'row'<'col-sm-12'fB>>" +
                  "<'row'<'col-sm-12'tr>>" +
                  "<'row'<'col-sm-12 col-md-5'li><'col-sm-12 col-md-7'p>>",
             buttons: [
@@ -90,8 +88,14 @@
                 { extend: 'pdf', text: 'Export PDF' },
                 { extend: 'print', text: 'Drucken' }
             ],
-            columnDefs: [ { orderable: false, targets: [0, 11] } ],
-            order: [[1, 'asc']] // Standard-Sortierung auf die 2. Spalte (ID)
+            columnDefs: [ { orderable: false, targets: [0, 11] }, { visible: false, targets: [1] } ],
+            order: [[5, 'asc']] // Standard-Sortierung auf das "Oligos"-Feld
+        });
+
+
+        // Event listener for the manual search box
+        document.getElementById('manualSearchBox').addEventListener('keyup', function() {
+            dataTable.search(this.value).draw();
         });
 
         // Checkbox-Verhalten
