@@ -71,6 +71,29 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Modal to select the primer list -->
+    <div class="modal" id="addToListModal">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Primer zu Liste hinzufügen</p>
+          <button class="delete" aria-label="close" id="closeModal"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="field">
+            <label class="label">Liste auswählen:</label>
+            <div class="control">
+              <div class="select" id="listSelectContainer"></div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-success" id="confirmAddToList">Hinzufügen</button>
+          <button class="button" id="cancelAddToList">Abbrechen</button>
+        </footer>
+      </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -197,6 +220,70 @@
                 } else {
                     alert('Fehler beim Erstellen der neuen Liste: ' + data.message);
                 }
+            });
+        });
+
+        document.getElementById('addToListButton').addEventListener('click', function() {
+            // Fetch the available lists
+            fetch('/get_primer_lists', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Populate the select element with the available lists
+                let selectElem = document.createElement('select');
+                selectElem.name = "primerList";
+                selectElem.id = "primerList";
+
+                data.private_lists.concat(data.public_lists).forEach(list => {
+                    let option = document.createElement('option');
+                    option.value = list.id;
+                    option.textContent = list.name;
+                    selectElem.appendChild(option);
+                });
+
+                let container = document.getElementById('listSelectContainer');
+                container.innerHTML = '';
+                container.appendChild(selectElem);
+
+                // Show the modal
+                document.getElementById('addToListModal').classList.add('is-active');
+            });
+        });
+
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('addToListModal').classList.remove('is-active');
+        });
+
+        document.getElementById('cancelAddToList').addEventListener('click', function() {
+            document.getElementById('addToListModal').classList.remove('is-active');
+        });
+
+        document.getElementById('confirmAddToList').addEventListener('click', function() {
+            let selectedListId = document.getElementById('primerList').value;
+            let selectedPrimers = Array.from(document.querySelectorAll('.primer-checkbox:checked')).map(checkbox => checkbox.value);
+
+            fetch('/add_primers_to_list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    list_id: selectedListId,
+                    primer_ids: selectedPrimers
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Primer erfolgreich zur Liste hinzugefügt!');
+                } else {
+                    alert('Fehler beim Hinzufügen der Primer zur Liste: ' + data.message);
+                }
+                document.getElementById('addToListModal').classList.remove('is-active');
             });
         });
     });

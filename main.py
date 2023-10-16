@@ -159,6 +159,25 @@ def create_app():
             return redirect(url_for('primers'))
         return render_template('edit_primer.html', form=form, primer=primer)
 
+    @app.route('/add_primers_to_list', methods=['POST'])
+    @login_required
+    def add_primers_to_list():
+        data = request.get_json()
+        list_id = data['list_id']
+        primer_ids = data['primer_ids']
+
+        primer_list = PrimerList.query.get(list_id)
+        if not primer_list:
+            return jsonify(success=False, message="Liste nicht gefunden")
+
+        primers = Primer.query.filter(Primer.id.in_(primer_ids)).all()
+        for primer in primers:
+            primer_list.primers.append(primer)
+
+        db.session.commit()
+
+        return jsonify(success=True)
+
     @app.route('/delete_primers', methods=['POST'])
     @login_required
     def delete_primers():
