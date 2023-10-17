@@ -8,7 +8,7 @@
         <p class="menu-label">
             Primer-Listen
         </p>
-        <ul class="menu-list" id="primerLists"></ul>
+        <ul class="menu-list" id="primerLists" style="cursor: pointer;"></ul>
         <div class="field">
             <input class="input" type="text" placeholder="Neue Liste" id="newListName">
         </div>
@@ -129,6 +129,19 @@
             event.preventDefault();
         }, false);
 
+        function highlightSelectedItem(listItem) {
+            const allItems = document.querySelectorAll('.menu-list li');
+            allItems.forEach(item => {
+                item.style.fontWeight = 'normal';
+                item.style.backgroundColor = 'transparent';
+                item.style.color = 'inherit';
+            });
+
+            listItem.style.fontWeight = 'bold';
+            listItem.style.backgroundColor = '#f5f5f5';
+            listItem.style.color = 'blue';
+        }
+
         function deletePrimerList(listId) {
             if (confirm("Möchten Sie diese Liste wirklich löschen?")) {
                 fetch('/delete_primer_list/' + listId, {
@@ -159,34 +172,65 @@
             .then(response => response.json())
             .then(data => {
                 const primerListsContainer = document.getElementById('primerLists');
-                primerListsContainer.innerHTML = '<li><b>PRIMER STOCK</b></li><li>Alle</li>';
+                primerListsContainer.innerHTML = '<li><b>PRIMER STOCK</b></li><li id="allItems">Alle</li>';
 
                 primerListsContainer.innerHTML += '<br><li><b>Öffentlich</b></li>';
                 data.public_lists.forEach(list => {
                     const listItem = document.createElement('li');
-                    const deleteIcon = document.createElement('span');
-                    deleteIcon.innerHTML = '🗑️';
-                    deleteIcon.style.cursor = 'pointer';
-                    deleteIcon.addEventListener('click', function() {
-                        deletePrimerList(list.id);
+                    listItem.id = `list_${list.id}`;
+                    listItem.textContent = list.name;
+                    listItem.addEventListener('click', function() {
+                        highlightSelectedItem(this);
+                        fetch(`/get_primers_for_list/${list.id}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                dataTable.clear().draw();
+                                data.primers.forEach(primer => {
+                                    dataTable.row.add([
+                                        `<input type="checkbox" class="primer-checkbox" value="${primer.id}">`,
+                                        primer.id,
+                                        primer.application,
+                                        primer.pcr,
+                                        primer.target,
+                                        primer.oligos,
+                                        primer.sequence,
+                                        primer.box,
+                                        primer.position,
+                                        primer.reference,
+                                        primer.comment,
+                                        `<a href="/edit_primer/${primer.id}" class="button is-small is-primary">Bearbeiten</a>`
+                                    ]).draw();
+                                });
+                            });
                     });
-                    listItem.textContent = list.name + ' ';
-                    listItem.appendChild(deleteIcon);
                     primerListsContainer.appendChild(listItem);
                 });
 
                 primerListsContainer.innerHTML += '<br><li><b>Privat</b></li>';
                 data.private_lists.forEach(list => {
                     const listItem = document.createElement('li');
+                    listItem.id = `list_${list.id}`;
                     const deleteIcon = document.createElement('span');
                     deleteIcon.innerHTML = '🗑️';
                     deleteIcon.style.cursor = 'pointer';
-                    deleteIcon.addEventListener('click', function() {
+                    deleteIcon.addEventListener('click', function(event) {
+                        event.stopPropagation();
                         deletePrimerList(list.id);
                     });
                     listItem.textContent = list.name + ' ';
                     listItem.appendChild(deleteIcon);
+                    listItem.addEventListener('click', function() {
+                        highlightSelectedItem(this);
+                        // Code to filter the dataTable based on the selected list
+                        dataTable.search(list.name).draw();
+                    });
                     primerListsContainer.appendChild(listItem);
+                });
+
+                // Add event listener for "Alle"
+                document.getElementById('allItems').addEventListener('click', function() {
+                    highlightSelectedItem(this);
+                    dataTable.search('').draw();
                 });
             });
         }
@@ -224,7 +268,6 @@
         });
 
         document.getElementById('addToListButton').addEventListener('click', function() {
-            // Fetch the available lists
             fetch('/get_primer_lists', {
                 method: 'GET',
                 headers: {
@@ -233,7 +276,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Populate the select element with the available lists
                 let selectElem = document.createElement('select');
                 selectElem.name = "primerList";
                 selectElem.id = "primerList";
@@ -249,7 +291,6 @@
                 container.innerHTML = '';
                 container.appendChild(selectElem);
 
-                // Show the modal
                 document.getElementById('addToListModal').classList.add('is-active');
             });
         });

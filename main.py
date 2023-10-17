@@ -178,6 +178,16 @@ def create_app():
 
         return jsonify(success=True)
 
+    @app.route('/get_primers_for_list/<int:list_id>', methods=['GET'])
+    @login_required
+    def get_primers_for_list(list_id):
+        primers_in_list = db.session.query(Primer).join(PrimerList.primers).filter(PrimerList.id == list_id).all()
+        primers_data = [{"id": primer.id, "application": primer.application, "pcr": primer.pcr, "target": primer.target,
+                         "oligos": primer.oligos, "sequence": primer.sequence, "box": primer.box,
+                         "position": primer.position, "reference": primer.reference, "comment": primer.comment} for
+                        primer in primers_in_list]
+        return jsonify(primers=primers_data)
+
     @app.route('/delete_primers', methods=['POST'])
     @login_required
     def delete_primers():
