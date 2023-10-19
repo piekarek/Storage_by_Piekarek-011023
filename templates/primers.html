@@ -3,113 +3,102 @@
 {% block content %}
 <h2 class="is-size-5 custom-heading">Primers</h2>
 <div class="content-wrapper">
-
-<div class="field is-grouped">
-    <label class="label">Listen</label>
-    <div class="control">
-        <div class="select">
-            <select id="combinedListDropdown">
-                <option value="all">Alle</option>
-            </select>
+    <!-- Sidebar for displaying Primer Lists -->
+    <aside class="primer-lists-sidebar menu">
+        <p class="menu-label">
+            Primer-Listen
+        </p>
+        <ul class="menu-list" id="primerLists" style="cursor: pointer;"></ul>
+        <div class="field">
+            <input class="input" type="text" placeholder="Neue Liste" id="newListName">
         </div>
-    </div>
-    <div class="control">
-        <span class="icon is-small is-left" style="cursor: pointer; vertical-align: middle;" id="deleteListIcon">🗑️</span>
-    </div>
-    <div class="control">
-        <button class="button is-success" id="createListButton">Neue Liste</button>
-    </div>
-</div>
+        <div class="field">
+            <label class="radio">
+                <input type="radio" name="listVisibility" value="private" checked> Privat
+            </label>
+            <label class="radio">
+                <input type="radio" name="listVisibility" value="public"> Öffentlich
+            </label>
+        </div>
+        <div class="field">
+            <button class="button is-success" id="createNewListButton">Erstellen</button>
+        </div>
+    </aside>
 
-<div class="primer-table-container">
-    <div class="buttons">
-        <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
-        <button id="delete-button" class="button is-danger">Löschen</button>
-        <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
+    <!-- Primers Table -->
+    <div class="primer-table-container">
+        <div class="buttons">
+            <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
+            <button id="delete-button" class="button is-danger">Löschen</button>
+            <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
+        </div>
+        <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
+            <thead>
+                <tr>
+                    <th style="text-align:center;"><input type="checkbox" id="select-all"></th>
+                    <th>ID</th>
+                    <th>Anwendung</th>
+                    <th>PCR</th>
+                    <th>Ziel</th>
+                    <th>Oligos</th>
+                    <th>Sequenz</th>
+                    <th>Box</th>
+                    <th>Position</th>
+                    <th>Referenz</th>
+                    <th>Kommentar</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for primer in primers %}
+                <tr>
+                    <td style="text-align:center;"><input type="checkbox" class="primer-checkbox" value="{{ primer.id }}"></td>
+                    <td>{{ primer.id }}</td>
+                    <td>{{ primer.application }}</td>
+                    <td>{{ primer.pcr }}</td>
+                    <td>{{ primer.target }}</td>
+                    <td>{{ primer.oligos }}</td>
+                    <td>{{ primer.sequence }}</td>
+                    <td>{{ primer.box }}</td>
+                    <td>{{ primer.position }}</td>
+                    <td>{{ primer.reference }}</td>
+                    <td>{{ primer.comment }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
-        <thead>
-            <tr>
-                <th style="text-align:center;"><input type="checkbox" id="select-all"></th>
-                <th>ID</th>
-                <th>Anwendung</th>
-                <th>PCR</th>
-                <th>Ziel</th>
-                <th>Oligos</th>
-                <th>Sequenz</th>
-                <th>Box</th>
-                <th>Position</th>
-                <th>Referenz</th>
-                <th>Kommentar</th>
-                <th>Aktionen</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for primer in primers %}
-            <tr>
-                <td style="text-align:center;"><input type="checkbox" class="primer-checkbox" value="{{ primer.id }}"></td>
-                <td>{{ primer.id }}</td>
-                <td>{{ primer.application }}</td>
-                <td>{{ primer.pcr }}</td>
-                <td>{{ primer.target }}</td>
-                <td>{{ primer.oligos }}</td>
-                <td>{{ primer.sequence }}</td>
-                <td>{{ primer.box }}</td>
-                <td>{{ primer.position }}</td>
-                <td>{{ primer.reference }}</td>
-                <td>{{ primer.comment }}</td>
-                <td>
-                    <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 
-<!-- Modal to create a new list -->
-<div class="modal" id="createListModal">
-    <div class="modal-background"></div>
-    <div class="modal-card">
+    <!-- Modal to select the primer list -->
+    <div class="modal" id="addToListModal">
+      <div class="modal-background"></div>
+      <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Neue Liste erstellen</p>
-            <button class="delete" aria-label="close" id="closeCreateListModal"></button>
+          <p class="modal-card-title">Primer zu Liste hinzufügen</p>
+          <button class="delete" aria-label="close" id="closeModal"></button>
         </header>
         <section class="modal-card-body">
-            <div class="field">
-                <label class="label">Listenname:</label>
-                <div class="control">
-                    <input class="input" type="text" placeholder="Neue Liste" id="newListNameModal">
-                </div>
+          <div class="field">
+            <label class="label">Liste auswählen:</label>
+            <div class="control">
+              <div class="select" id="listSelectContainer"></div>
             </div>
-            <div class="field">
-                <label class="radio">
-                    <input type="radio" name="listVisibilityModal" value="private" checked> Privat
-                </label>
-                <label class="radio">
-                    <input type="radio" name="listVisibilityModal" value="public"> Öffentlich
-                </label>
-            </div>
+          </div>
         </section>
         <footer class="modal-card-foot">
-            <button class="button is-success" id="confirmCreateList">Erstellen</button>
-            <button class="button" id="cancelCreateList">Abbrechen</button>
+          <button class="button is-success" id="confirmAddToList">Hinzufügen</button>
+          <button class="button" id="cancelAddToList">Abbrechen</button>
         </footer>
+      </div>
     </div>
-</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.getElementById('createListButton').addEventListener('click', function() {
-        document.getElementById('createListModal').classList.add('is-active');
-    });
-
-    document.getElementById('closeCreateListModal').addEventListener('click', function() {
-        document.getElementById('createListModal').classList.remove('is-active');
-    });
-
     document.addEventListener('DOMContentLoaded', function() {
         const dataTable = $('#primers-table').DataTable({
             lengthMenu: [[10, 25, 50, 100, 150, 200, 500, -1], [10, 25, 50, 100, 150, 200, 500, "Alle"]],
@@ -143,14 +132,10 @@
         function highlightSelectedItem(listItem) {
             const allItems = document.querySelectorAll('.menu-list li');
             allItems.forEach(item => {
-                item.style.fontWeight = 'normal';
-                item.style.backgroundColor = 'transparent';
-                item.style.color = 'inherit';
+                item.classList.remove('highlighted');
             });
 
-            listItem.style.fontWeight = 'bold';
-            listItem.style.backgroundColor = '#f5f5f5';
-            listItem.style.color = 'blue';
+            listItem.classList.add('highlighted');
         }
 
         function deletePrimerList(listId) {
@@ -214,6 +199,14 @@
                                 });
                             });
                     });
+                    const deleteIcon = document.createElement('span');
+                    deleteIcon.innerHTML = '🗑️';
+                    deleteIcon.style.cursor = 'pointer';
+                    deleteIcon.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                        deletePrimerList(list.id);
+                    });
+                    listItem.appendChild(deleteIcon);
                     primerListsContainer.appendChild(listItem);
                 });
 
@@ -341,3 +334,4 @@
     });
 </script>
 {% endblock %}
+
