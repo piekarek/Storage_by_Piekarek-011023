@@ -5,7 +5,7 @@ from auth import auth
 from flask_migrate import Migrate, upgrade, init
 import os
 from flask_mail import Mail
-
+from models import PrimerList  # Import the PrimerList model if it's not already imported
 
 def create_app():
     app = Flask(__name__)
@@ -71,8 +71,12 @@ def create_app():
         return "Migration durchgeführt und Datenbank aktualisiert!"
 
     @app.route('/primers')
+    @login_required
     def primers():
-        return render_template('primers.html')
+        # Get all the primer lists. You might want to filter them based on visibility and user as needed
+        primer_lists = PrimerList.query.all()
+        return render_template('primers.html', primer_lists=primer_lists)
+
 
     return app
 
