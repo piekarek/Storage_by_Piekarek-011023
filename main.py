@@ -6,6 +6,8 @@ from flask_migrate import Migrate, upgrade, init
 import os
 from flask_mail import Mail
 from models import PrimerList  # Import the PrimerList model if it's not already imported
+from models import Primer, primer_list_association
+
 
 def create_app():
     app = Flask(__name__)
@@ -76,6 +78,16 @@ def create_app():
         # Get all the primer lists ordered by visibility and then by name
         primer_lists = PrimerList.query.order_by(PrimerList.visibility, PrimerList.name).all()
         return render_template('primers.html', primer_lists=primer_lists)
+
+    @app.route('/get-primers-for-list/<int:primerListId>', methods=['GET'])
+    def get_primers_for_list(primerListId):
+        # Fetch the associated primers from the database
+        primers = db.session.query(Primer).join(primer_list_association).filter(
+            primer_list_association.c.primer_list_id == primerListId).all()
+        # Convert the primers to a format suitable for DataTables and return
+        primer_data = [primer.serialize for primer in primers]
+
+        return jsonify(primer_data)
 
     return app
 

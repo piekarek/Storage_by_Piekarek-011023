@@ -40,22 +40,29 @@
     }
 
     #primerListTable {
-        user-select: none;      /* Standard syntax */
-        -webkit-user-select: none; /* Chrome and Safari */
-        -moz-user-select: none; /* Firefox */
-        -ms-user-select: none;  /* Internet Explorer/Edge */
-    }
-    #primerListTable.table tbody tr.selected {
-    background-color: hsl(204, 86%, 53%) !important;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
     }
 
+    #primerListTable tbody tr.selected td {
+        background-color: hsl(204, 86%, 53%) !important;
+    }
 
 
-        /* Style for the sidebars */
+    /* Style for the sidebars */
     .sidebar {
-        width: 20%; /* Reduziert auf 20% für eine schmalere Sidebar */
         float: left;
-        padding: 1em 2em 1em 0; /* Fügt rechten Padding hinzu, um Abstand zwischen den Sidebars zu erhöhen */
+        padding: 1em 2em 1em 0;
+    }
+
+    .sidebar:first-of-type {
+        width: 20%; /* Die Breite der ersten (linken) Sidebar */
+    }
+
+    .sidebar:last-of-type {
+        width: 80%; /* Die Breite der zweiten (rechten) Sidebar */
     }
 
 
@@ -73,7 +80,7 @@
                 <tbody>
                     {% for primer_list in primer_lists %}
                         {% if primer_list.visibility == 'public' or (primer_list.visibility == 'private' and primer_list.user_id == current_user.id) %}
-                            <tr>
+                            {% if primer_list %}<tr data-primer-list-id="{{ primer_list.id }}">{% else %}<tr>{% endif %}
                                 <td>{{ primer_list.name }}</td>
                                 <td>{{ primer_list.visibility }}</td>
                             </tr>
@@ -89,21 +96,26 @@
 <div class="sidebar">
     <aside class="menu">
         <p class="menu-label">
-            New Table
+            Primers
         </p>
         <ul class="menu-list">
             <!-- Using DataTables for the new table -->
-            <table id="newTable" class="table is-fullwidth">
+            <table id="PrimerTable" class="table is-fullwidth">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Application</th>
+                        <th>PCR</th>
+                        <th>Target</th>
+                        <th>Oligos</th>
+                        <th>Sequence</th>
+                        <th>Box</th>
+                        <th>Position</th>
+                        <th>Reference</th>
+                        <th>Comment</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Primer 1</td>
-                    </tr>
-                    <!-- Add more rows as needed -->
+                    <!-- The rows will be dynamically added by DataTables -->
                 </tbody>
             </table>
         </ul>
@@ -161,10 +173,42 @@
             $('#primerListTable tbody tr.selected').removeClass('selected');
             $(this).addClass('selected');
         }
+
+        // Log the status of .selected class
+        console.log("Selected class status:", $(this).hasClass('selected'));
+
+        // Fetch the associated primers based on the clicked primer list
+        var primerListId = $(this).data('primer-list-id');
+        $.ajax({
+            url: '/get-primers-for-list/' + primerListId,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                // Update the right DataTable with the fetched primers
+                var newTable = $('#PrimerTable').DataTable();
+                newTable.clear().draw();
+                data.forEach(function(primer) {
+                    newTable.row.add([
+                        primer.application,
+                        primer.pcr,
+                        primer.target,
+                        primer.oligos,
+                        primer.sequence,
+                        primer.box,
+                        primer.position,
+                        primer.reference,
+                        primer.comment
+                    ]).draw();
+                });
+            },
+            error: function(error) {
+                console.error("Error fetching associated primers:", error);
+            }
+        });
     });
 
     // Initialize the new DataTable
-    $('#newTable').DataTable({
+    $('#PrimerTable').DataTable({
         paging: false,
         searching: false,
         bInfo: false,
@@ -174,3 +218,4 @@
     });
 </script>
 {% endblock %}
+
