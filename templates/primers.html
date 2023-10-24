@@ -1,36 +1,117 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Sidebar for displaying the primer list using DataTables and Bulma -->
-<aside class="menu">
-    <p class="menu-label">
-        Primer Lists
-    </p>
-    <ul class="menu-list">
-        <!-- Using DataTables to display the primer list -->
-        <table id="primerListTable" class="table is-striped is-hoverable is-fullwidth">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Visibility</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for primer_list in primer_lists %}
-                    {% if primer_list.visibility == 'public' or (primer_list.visibility == 'private' and primer_list.user_id == current_user.id) %}
-                        <tr>
-                            <td>{{ primer_list.name }}</td>
-                            <td>{{ primer_list.visibility }}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </ul>
-</aside>
+<!-- Additional styles for the table -->
+<style>
+    #primerListTable, #primerListTable thead, #primerListTable tbody, #primerListTable tfoot, #primerListTable tr, #primerListTable th, #primerListTable td {
+        border: none !important;
+        border-collapse: collapse;
+    }
+
+    #primerListTable .group {
+        font-weight: bold;
+        text-decoration: underline;
+    }
+
+    /* Remove hover effect */
+    #primerListTable tr:hover {
+        background-color: inherit !important;
+    }
+
+    /* Set all rows to white background */
+    #primerListTable tr {
+        background-color: white !important;
+    }
+
+    /* Remove any outer borders or shadows from the menu list container */
+    .menu-list {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove border introduced by DataTables scroll feature */
+    .dataTables_scroll {
+        border: none !important;
+    }
+
+    /* Style for selected rows */
+    tr.selected {
+        background-color: hsl(204, 86%, 53%) !important;
+    }
+
+    #primerListTable {
+        user-select: none;      /* Standard syntax */
+        -webkit-user-select: none; /* Chrome and Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none;  /* Internet Explorer/Edge */
+    }
+    #primerListTable.table tbody tr.selected {
+    background-color: hsl(204, 86%, 53%) !important;
+    }
+
+
+
+        /* Style for the sidebars */
+    .sidebar {
+        width: 20%; /* Reduziert auf 20% für eine schmalere Sidebar */
+        float: left;
+        padding: 1em 2em 1em 0; /* Fügt rechten Padding hinzu, um Abstand zwischen den Sidebars zu erhöhen */
+    }
+
+
+</style>
+
+<!-- Original Sidebar (Primer Lists) -->
+<div class="sidebar">
+    <aside class="menu">
+        <p class="menu-label">
+            Primer Lists
+        </p>
+        <ul class="menu-list">
+            <!-- Using DataTables to display the primer list -->
+            <table id="primerListTable" class="table is-fullwidth">
+                <tbody>
+                    {% for primer_list in primer_lists %}
+                        {% if primer_list.visibility == 'public' or (primer_list.visibility == 'private' and primer_list.user_id == current_user.id) %}
+                            <tr>
+                                <td>{{ primer_list.name }}</td>
+                                <td>{{ primer_list.visibility }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </ul>
+    </aside>
+</div>
+
+<!-- New Sidebar (For new DataTable) -->
+<div class="sidebar">
+    <aside class="menu">
+        <p class="menu-label">
+            New Table
+        </p>
+        <ul class="menu-list">
+            <!-- Using DataTables for the new table -->
+            <table id="newTable" class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Primer 1</td>
+                    </tr>
+                    <!-- Add more rows as needed -->
+                </tbody>
+            </table>
+        </ul>
+    </aside>
+</div>
 
 <!-- Placeholder for additional content, if needed -->
-<div class="content">
+<div class="content" style="clear: both;">
     <!-- Any additional content can go here -->
 </div>
 {% endblock %}
@@ -41,7 +122,12 @@
     var table = $('#primerListTable').DataTable({
         columnDefs: [{ visible: false, targets: groupColumn }],
         order: [[groupColumn, 'asc']],
-        displayLength: 25,
+        paging: false,
+        searching: false,
+        bInfo: false,
+        ordering: false,
+        scrollCollapse: true,
+        scrollY: '50vh',
         drawCallback: function (settings) {
             var api = this.api();
             var rows = api.rows({ page: 'current' }).nodes();
@@ -65,15 +151,26 @@
         }
     });
 
-    // Order by the grouping
-    $('#primerListTable tbody').on('click', 'tr.group', function () {
-        var currentOrder = table.order()[0];
-        if (currentOrder[0] === groupColumn && currentOrder[1] === 'asc') {
-            table.order([groupColumn, 'desc']).draw();
+    // Click event listener for row selection, excluding group rows
+    $('#primerListTable tbody').on('click', 'tr:not(.group)', function() {
+        console.log("Row clicked!");
+
+        if ($(this).hasClass('selected')) {
+            $(this).removeClass('selected');
+        } else {
+            $('#primerListTable tbody tr.selected').removeClass('selected');
+            $(this).addClass('selected');
         }
-        else {
-            table.order([groupColumn, 'asc']).draw();
-        }
+    });
+
+    // Initialize the new DataTable
+    $('#newTable').DataTable({
+        paging: false,
+        searching: false,
+        bInfo: false,
+        ordering: false,
+        scrollCollapse: true,
+        scrollY: '50vh'
     });
 </script>
 {% endblock %}

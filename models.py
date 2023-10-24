@@ -36,6 +36,14 @@ class User(db.Model, UserMixin):
             return None
         return User.query.get(user_id)
 
+
+
+# Association table for the many-to-many relationship between Primers and PrimerLists
+primer_list_association = db.Table('primer_list_association',
+    db.Column('primer_id', db.Integer, db.ForeignKey('primer.id')),
+    db.Column('primer_list_id', db.Integer, db.ForeignKey('primer_list.id'))
+)
+
 class Primer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     application = db.Column(db.String(100), nullable=False)
@@ -48,16 +56,25 @@ class Primer(db.Model):
     reference = db.Column(db.String(255), nullable=True)
     comment = db.Column(db.Text, nullable=True)
 
-# Association table for the many-to-many relationship between Primers and PrimerLists
-primer_list_association = db.Table('primer_list_association',
-    db.Column('primer_id', db.Integer, db.ForeignKey('primer.id')),
-    db.Column('primer_list_id', db.Integer, db.ForeignKey('primer_list.id'))
-)
-
+    @property
+    def serialize(self):
+        """Return object data in easily serializable format"""
+        return {
+            'id': self.id,
+            'application': self.application,
+            'pcr': self.pcr,
+            'target': self.target,
+            'oligos': self.oligos,
+            'sequence': self.sequence,
+            'box': self.box,
+            'position': self.position,
+            'reference': self.reference,
+            'comment': self.comment
+        }
 class PrimerList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    visibility = db.Column(db.String(50), default='private', nullable=False)  # Add this line for visibility
+    visibility = db.Column(db.String(50), default='private', nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     primers = db.relationship('Primer', secondary=primer_list_association, lazy='subquery',
                               backref=db.backref('lists', lazy=True))

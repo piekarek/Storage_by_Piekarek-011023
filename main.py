@@ -73,10 +73,9 @@ def create_app():
     @app.route('/primers')
     @login_required
     def primers():
-        # Get all the primer lists. You might want to filter them based on visibility and user as needed
-        primer_lists = PrimerList.query.all()
+        # Get all the primer lists ordered by visibility and then by name
+        primer_lists = PrimerList.query.order_by(PrimerList.visibility, PrimerList.name).all()
         return render_template('primers.html', primer_lists=primer_lists)
-
 
     return app
 
