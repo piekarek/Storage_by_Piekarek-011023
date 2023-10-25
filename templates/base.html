@@ -9,77 +9,65 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
 
     <!-- DataTables Buttons Erweiterung CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.0.1/css/buttons.dataTables.min.css">
 
-    <!-- pdfmake (für PDF-Export) CSS -->
+    <!-- DataTables Editor CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='datatables-editor/editor.bulma.min.css') }}">
+
+    <!-- pdfmake (für PDF-Export) JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
 
     <style>
-
         .highlighted {
             font-weight: bold;
             background-color: #f5f5f5;
             color: blue;
         }
-
-
         .custom-heading {
             text-decoration: underline;
             font-weight: bold;
         }
-
-        /* Cursor-Stil entfernen */
         .dataTables_wrapper .dataTables_filter input {
             outline: none;
             border: none;
             box-shadow: none;
         }
-
-        /* Checkbox-Ausrichtung */
         thead input[type="checkbox"], tbody input[type="checkbox"] {
             vertical-align: middle;
             margin: 0px;
         }
-
         #primers-table, #primers-table * {
             cursor: default !important;
         }
-
         #primers-table_length {
             margin-left: 400px;
             margin-top: 15px;
         }
-
         .content-wrapper {
             display: flex;
             flex-direction: row;
-            align-items: flex-start; /* sorgt dafür, dass die Sidebar und die Tabelle oben beginnen */
+            align-items: flex-start;
         }
-
         .primer-lists-sidebar {
-            flex: 0 0 240px; /* gibt der Sidebar eine feste Breite von 240px */
-            margin-right: 20px; /* etwas Abstand zwischen der Sidebar und der Tabelle */
+            flex: 0 0 240px;
+            margin-right: 20px;
             padding: 10px;
-            background-color: #f5f5f5; /* optional: fügt einen Hintergrund zur Sidebar hinzu */
-            border-radius: 8px; /* optional: rundet die Ecken der Sidebar ab */
+            background-color: #f5f5f5;
+            border-radius: 8px;
         }
-
         .primer-table-container {
-            flex: 1; /* nutzt den verbleibenden Raum */
+            flex: 1;
         }
-
-        /* Additional CSS for the search input */
         .dataTables_wrapper .dataTables_filter input {
             border: 1px solid #d4d4d4;
             padding-left: 2.5em;
             background-color: #fff;
-            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8c1.57 0 3.03-.46 4.24-1.24l6.37 6.38L22 22l-7-7C16.54 13.21 18 11.7 18 10c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" fill="%23000"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 10s3.58 8 8 8c1.57 0 3.03-.46 4.24-1.24l6.37 6.38L22 22l-7-7C16.54 13.21 18 11.7 18 10c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" fill="%23000"/></svg>');
             background-repeat: no-repeat;
             background-size: 1em;
             background-position: 0.5em center;
@@ -91,7 +79,6 @@
         <div class="navbar-brand">
             <a class="navbar-item" href="{{ url_for('index') }}">IMS by Piekarek</a>
         </div>
-
         <div class="navbar-menu">
             <div class="navbar-start">
                 <a href="{{ url_for('index') }}" class="navbar-item">Home</a>
@@ -99,7 +86,6 @@
                     <a href="{{ url_for('primers') }}" class="navbar-item">Primers</a>
                 {% endif %}
             </div>
-
             <div class="navbar-end">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('profile') }}" class="navbar-item">Profile</a>
@@ -141,6 +127,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/buttons.print.min.js"></script>
+
+    <!-- DataTables Editor JS -->
+    <script type="text/javascript" src="{{ url_for('static', filename='datatables-editor/editor.bulma.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='datatables-editor/dataTables.editor.min.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

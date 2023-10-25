@@ -81,13 +81,39 @@ def create_app():
 
     @app.route('/get-primers-for-list/<int:primerListId>', methods=['GET'])
     def get_primers_for_list(primerListId):
-        # Fetch the associated primers from the database
         primers = db.session.query(Primer).join(primer_list_association).filter(
             primer_list_association.c.primer_list_id == primerListId).all()
-        # Convert the primers to a format suitable for DataTables and return
         primer_data = [primer.serialize for primer in primers]
+        return jsonify({"data": primer_data})
 
-        return jsonify(primer_data)
+    @app.route('/editor', methods=['POST'])
+    @login_required
+    def editor():
+        data = request.json
+        action = data.get('action')
+
+        if action == 'create':
+            # Code zum Erstellen eines neuen Eintrags
+            primer = Primer(**data['data'][0])
+            db.session.add(primer)
+            db.session.commit()
+
+        elif action == 'edit':
+            # Code zum Bearbeiten eines Eintrags
+            primer_id = list(data['data'].keys())[0]
+            primer = Primer.query.get(primer_id)
+            for key, value in data['data'][primer_id].items():
+                setattr(primer, key, value)
+            db.session.commit()
+
+        elif action == 'remove':
+            # Code zum Löschen eines Eintrags
+            primer_id = list(data['data'].keys())[0]
+            Primer.query.filter_by(id=primer_id).delete()
+            db.session.commit()
+
+        # Antwort an den Client senden
+        return jsonify({})
 
     return app
 
