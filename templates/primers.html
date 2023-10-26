@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="notification is-{{ category }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+<!-- Additional styles for the table -->
 <style>
-    /* Hier können Sie Ihre zusätzlichen Stile für die Tabelle und andere Elemente hinzufügen */
     #primerListTable, #primerListTable thead, #primerListTable tbody, #primerListTable tfoot, #primerListTable tr, #primerListTable th, #primerListTable td {
         border: none !important;
         border-collapse: collapse;
@@ -13,25 +24,30 @@
         text-decoration: underline;
     }
 
+    /* Remove hover effect */
     #primerListTable tr:hover {
         background-color: inherit !important;
     }
 
+    /* Set all rows to white background */
     #primerListTable tr {
         background-color: white !important;
     }
 
+    /* Remove any outer borders or shadows from the menu list container */
     .menu-list {
         border: none !important;
         box-shadow: none !important;
     }
 
+    /* Remove border introduced by DataTables scroll feature */
     .dataTables_scroll {
         border: none !important;
     }
 
+    /* Style for selected rows */
     tr.selected {
-        background-color: hsl(204, 86%, 53%) !important;
+        background-color: hsl(171.1, 100%, 40.98%) !important;
     }
 
     #primerListTable {
@@ -42,51 +58,61 @@
     }
 
     #primerListTable tbody tr.selected td {
-        background-color: hsl(204, 86%, 53%) !important;
+        background-color: hsl(171.1, 100%, 40.98%) !important;
     }
 
+    /* Style for the sidebars */
     .sidebar {
         float: left;
         padding: 1em 2em 1em 0;
     }
 
     .sidebar:first-of-type {
-        width: 20%;
+        width: 20%; /* Die Breite der ersten (linken) Sidebar */
     }
 
     .sidebar:last-of-type {
-        width: 80%;
+        width: 80%; /* Die Breite der zweiten (rechten) Sidebar */
     }
 </style>
 
+<!-- Original Sidebar (Primer Lists) -->
 <div class="sidebar">
     <aside class="menu">
         <p class="menu-label">
             Primer Lists
         </p>
         <ul class="menu-list">
+
+            <!-- Using DataTables to display the primer list -->
             <table id="primerListTable" class="table is-fullwidth">
                 <tbody>
                     {% for primer_list in primer_lists %}
-                        {% if primer_list.visibility == 'public' or (primer_list.visibility == 'private' and primer_list.user_id == current_user.id) %}
+                        {% if primer_list.visibility.lower() == 'public' or primer_list.visibility.lower() == 'standard' or (primer_list.visibility.lower() == 'private' and primer_list.user_id == current_user.id) %}
                             <tr data-primer-list-id="{{ primer_list.id }}">
                                 <td>{{ primer_list.name }}</td>
                                 <td>{{ primer_list.visibility }}</td>
                             </tr>
                         {% endif %}
                     {% endfor %}
+
                 </tbody>
             </table>
+            <br>
+            <!-- Button, um das modale Fenster zu öffnen -->
+            <button class="button is-primary" onclick="openModal()">New Primer-List</button>
         </ul>
     </aside>
 </div>
 
+<!-- New Sidebar (For new DataTable) -->
 <div class="sidebar">
     <aside class="menu">
         <p class="menu-label">
             Primers
         </p>
         <ul class="menu-list">
+            <!-- Using DataTables for the new table -->
             <table id="PrimerTable" class="table is-fullwidth">
                 <thead>
                     <tr>
@@ -102,22 +128,61 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- The rows will be dynamically added by DataTables -->
                 </tbody>
             </table>
         </ul>
     </aside>
 </div>
 
+<!-- Modales Fenster -->
+<div class="modal" id="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Neue Primer-Liste</p>
+      <button class="delete" aria-label="close" onclick="closeModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <form id="new-primer-list-form">
+        <div class="field">
+          <label class="label">Name</label>
+          <div class="control">
+            <input class="input" type="text" name="name" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Visibility</label>
+          <div class="control">
+            <label class="radio"><input type="radio" name="visibility" value="Private" required> Private</label>
+            <label class="radio"><input type="radio" name="visibility" value="Public" required> Public</label>
+            {% if current_user.is_admin %}
+              <label class="radio"><input type="radio" name="visibility" value="Standard" required> Standard</label>
+            {% endif %}
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary" type="button" onclick="savePrimerList()">Speichern</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!-- Placeholder for additional content, if needed -->
 <div class="content" style="clear: both;">
+    <!-- Any additional content can go here -->
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    var groupColumn = 1;
+    var groupColumn = 1;  // This should be 1 for the Visibility column, since columns are 0-indexed
     var table = $('#primerListTable').DataTable({
         columnDefs: [{ visible: false, targets: groupColumn }],
-        order: [[groupColumn, 'asc']],
+        order: [[groupColumn, 'asc'], [0, 'asc']],
         paging: false,
         searching: false,
         bInfo: false,
@@ -147,6 +212,7 @@
         }
     });
 
+    // Click event listener for row selection, excluding group rows
     $('#primerListTable tbody').on('click', 'tr:not(.group)', function() {
         console.log("Row clicked!");
 
@@ -157,103 +223,94 @@
             $(this).addClass('selected');
         }
 
+        // Log the status of .selected class
         console.log("Selected class status:", $(this).hasClass('selected'));
 
+        // Fetch the associated primers based on the clicked primer list
         var primerListId = $(this).data('primer-list-id');
         $.ajax({
             url: '/get-primers-for-list/' + primerListId,
             method: 'GET',
             dataType: 'json',
             success: function(data) {
+                // Update the right DataTable with the fetched primers
                 var newTable = $('#PrimerTable').DataTable();
                 newTable.clear().draw();
-                console.log(data);
-                console.log("Is Array? ", data.constructor === Array);
-                if (data.constructor === Array) {
-                    data.forEach(function(primer) {
-                        newTable.row.add([
-                            primer.application,
-                            primer.pcr,
-                            primer.target,
-                            primer.oligos,
-                            primer.sequence,
-                            primer.box,
-                            primer.position,
-                            primer.reference,
-                            primer.comment
-                        ]).draw();
-                    });
-                } else {
-                    console.error("Received data is not an array:", data);
-                }
+                data.forEach(function(primer) {
+                    newTable.row.add([
+                        primer.application,
+                        primer.pcr,
+                        primer.target,
+                        primer.oligos,
+                        primer.sequence,
+                        primer.box,
+                        primer.position,
+                        primer.reference,
+                        primer.comment
+                    ]).draw();
+                });
             },
-
             error: function(error) {
                 console.error("Error fetching associated primers:", error);
             }
         });
     });
 
-    var editor = new $.fn.dataTable.Editor({
-        ajax: {
-            create: {
-                type: 'POST',
-                url:  '/editor'
-            },
-            edit: {
-                type: 'POST',
-                url:  '/editor/_id_'
-            },
-            remove: {
-                type: 'POST',
-                url:  '/editor/_id_'
-            }
-        },
-        table: "#PrimerTable",
-        fields: [
-            { label: "Application", name: "application" },
-            { label: "PCR", name: "pcr" },
-            { label: "Target", name: "target" },
-            { label: "Oligos", name: "oligos" },
-            { label: "Sequence", name: "sequence" },
-            { label: "Box", name: "box" },
-            { label: "Position", name: "position" },
-            { label: "Reference", name: "reference" },
-            { label: "Comment", name: "comment" }
-        ]
+    // Initialize the new DataTable
+    $('#PrimerTable').DataTable({
+        paging: false,
+        searching: false,
+        bInfo: false,
+        ordering: false,
+        scrollCollapse: true,
+        scrollY: '50vh'
     });
 
-    $('#PrimerTable').DataTable({
-    dom: "Bfrtip",
-    ajax: {
-        url: "/get-primers-for-list/1", // Ändern Sie diese URL entsprechend Ihrem Setup
-        type: "GET",
-        dataSrc: "data" // Hier weisen Sie DataTables an, dass die Daten unter dem Schlüssel "data" im Antwortobjekt zu finden sind.
-    },
-    columns: [
-        { data: "application" },
-        { data: "pcr" },
-        { data: "target" },
-        { data: "oligos" },
-        { data: "sequence" },
-        { data: "box" },
-        { data: "position" },
-        { data: "reference" },
-        { data: "comment" }
-    ],
-    select: true,
-    buttons: [
-        { extend: "create", editor: editor },
-        { extend: "edit",   editor: editor },
-        { extend: "remove", editor: editor }
-    ],
-    paging: false,
-    searching: false,
-    bInfo: false,
-    ordering: false,
-    scrollCollapse: true,
-    scrollY: '50vh'
-});
+    function openModal() {
+        document.getElementById('modal').classList.add('is-active');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('is-active');
+    }
+
+    function savePrimerList() {
+        var form = document.getElementById('new-primer-list-form');
+        var formData = new FormData(form);
+
+        fetch('/add_primer_list', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Primer-Liste erfolgreich gespeichert:', data);
+                closeModal();
+
+                // Fügen Sie den neuen Eintrag zur Tabelle hinzu
+                var table = $('#primerListTable').DataTable();
+                table.row.add([
+                    data.primer_list.name,
+                    data.primer_list.visibility
+                ]).draw();
+
+                // Zeigen Sie die Erfolgsmeldung an
+                var notification = '<div class="notification is-success">Primer-Liste erfolgreich erstellt!</div>';
+                $('.section').prepend(notification);
+
+                // Aktualisieren Sie die Tabelle, um Sortierung und Gruppierung anzuwenden
+                table.draw();
+                location.reload();  // Seite neu laden
+            } else {
+                console.error('Fehler beim Speichern der Primer-Liste:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Fehler beim Speichern der Primer-Liste:', error);
+        });
+    }
 
 </script>
 {% endblock %}

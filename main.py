@@ -1,13 +1,10 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from flask_login import LoginManager, login_required, current_user
-from models import User, db
+from models import User, db, PrimerList, Primer, primer_list_association  # Import the PrimerList model
 from auth import auth
 from flask_migrate import Migrate, upgrade, init
 import os
 from flask_mail import Mail
-from models import PrimerList  # Import the PrimerList model if it's not already imported
-from models import Primer, primer_list_association
-
 
 def create_app():
     app = Flask(__name__)
@@ -81,39 +78,31 @@ def create_app():
 
     @app.route('/get-primers-for-list/<int:primerListId>', methods=['GET'])
     def get_primers_for_list(primerListId):
+        # Fetch the associated primers from the database
         primers = db.session.query(Primer).join(primer_list_association).filter(
             primer_list_association.c.primer_list_id == primerListId).all()
+        # Convert the primers to a format suitable for DataTables and return
         primer_data = [primer.serialize for primer in primers]
-        return jsonify({"data": primer_data})
 
-    @app.route('/editor', methods=['POST'])
+        return jsonify(primer_data)
+
+    @app.route('/add_primer_list', methods=['POST'])
     @login_required
-    def editor():
-        data = request.json
-        action = data.get('action')
+    def add_primer_list():
+        name = request.form.get('name')
+        visibility = request.form.get('visibility')
+        user_id = current_user.id
 
-        if action == 'create':
-            # Code zum Erstellen eines neuen Eintrags
-            primer = Primer(**data['data'][0])
-            db.session.add(primer)
-            db.session.commit()
+        if not name or not visibility:
+            return jsonify({'status': 'error', 'message': 'Name und Sichtbarkeit sind erforderlich.'}), 400
 
-        elif action == 'edit':
-            # Code zum Bearbeiten eines Eintrags
-            primer_id = list(data['data'].keys())[0]
-            primer = Primer.query.get(primer_id)
-            for key, value in data['data'][primer_id].items():
-                setattr(primer, key, value)
-            db.session.commit()
+        new_primer_list = PrimerList(name=name, visibility=visibility, user_id=user_id)
+        db.session.add(new_primer_list)
+        db.session.commit()
 
-        elif action == 'remove':
-            # Code zum Löschen eines Eintrags
-            primer_id = list(data['data'].keys())[0]
-            Primer.query.filter_by(id=primer_id).delete()
-            db.session.commit()
-
-        # Antwort an den Client senden
-        return jsonify({})
+        return jsonify({'status': 'success', 'message': 'Primer-Liste erfolgreich erstellt.',
+                        'primer_list': {'id': new_primer_list.id, 'name': new_primer_list.name,
+                                        'visibility': new_primer_list.visibility}})
 
     return app
 
