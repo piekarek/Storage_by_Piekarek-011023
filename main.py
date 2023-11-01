@@ -69,12 +69,7 @@ def create_app():
 
         return "Migration durchgeführt und Datenbank aktualisiert!"
 
-    @app.route('/primers')
-    @login_required
-    def primers():
-        # Get all the primer lists ordered by visibility and then by name
-        primer_lists = PrimerList.query.order_by(PrimerList.visibility, PrimerList.name).all()
-        return render_template('primers.html', primer_lists=primer_lists)
+
 
     @app.route('/get-primers-for-list/<int:primerListId>', methods=['GET'])
     def get_primers_for_list(primerListId):
@@ -103,6 +98,39 @@ def create_app():
         return jsonify({'status': 'success', 'message': 'Primer-Liste erfolgreich erstellt.',
                         'primer_list': {'id': new_primer_list.id, 'name': new_primer_list.name,
                                         'visibility': new_primer_list.visibility}})
+
+    @app.route('/delete_primer_list/<int:primer_list_id>', methods=['DELETE'])
+    @login_required
+    def delete_primer_list(primer_list_id):
+        primer_list = PrimerList.query.get_or_404(primer_list_id)
+
+        # Überprüfen, ob der aktuelle Benutzer der Besitzer der Liste ist oder Admin-Rechte hat
+        if current_user.id != primer_list.user_id and not current_user.is_admin:
+            return jsonify({'status': 'error', 'message': 'Sie haben keine Berechtigung, diese Liste zu löschen.'}), 403
+
+        db.session.delete(primer_list)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Primer-Liste erfolgreich gelöscht.'})
+
+    @app.route('/get_primer_lists')
+    @login_required
+    def get_primer_lists():
+        primer_lists = PrimerList.query.filter(
+            (PrimerList.visibility == 'Public') |
+            (PrimerList.visibility == 'Standard') |
+            (PrimerList.visibility == 'public') |
+            (PrimerList.visibility == 'private') |
+            ((PrimerList.visibility == 'Private') & (PrimerList.user_id == current_user.id))
+        ).order_by(PrimerList.visibility, PrimerList.name).all()
+        primer_lists_data = [{'name': pl.name, 'visibility': pl.visibility, 'id': pl.id} for pl in primer_lists]
+        return jsonify(primer_lists_data)
+
+    @app.route('/primers')
+    @login_required
+    def primers():
+        primer_lists = PrimerList.query.filter_by(user_id=current_user.id).all()
+        serialized_primer_lists = [primer_list.serialize for primer_list in primer_lists]
+        return render_template('primers.html', primer_lists=serialized_primer_lists)
 
     return app
 

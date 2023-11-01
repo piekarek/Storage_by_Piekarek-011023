@@ -1,0 +1,33 @@
+.column {
+    float: left;
+    padding: 1em;
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.column.is-3 {
+    width: 25%;
+    overflow-y: scroll;
+    max-height: 80vh;
+    user-select: none;
+}
+
+.column:not(.is-3) {
+    width: 75%;
+}
+
+.selected-list a {
+    background-color: #f0f0f0;
+}
+
+.edit-button, .delete-button {
+    margin-left: 5px;
+}
+
+.delete-button:hover {
+    color: #ff3860;
+}
+
+.edit-button:hover {
+    color: #3273dc;
+}

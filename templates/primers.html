@@ -11,128 +11,50 @@
   {% endif %}
 {% endwith %}
 
-
-<!-- Additional styles for the table -->
-<style>
-    #primerListTable, #primerListTable thead, #primerListTable tbody, #primerListTable tfoot, #primerListTable tr, #primerListTable th, #primerListTable td {
-        border: none !important;
-        border-collapse: collapse;
-    }
-
-    #primerListTable .group {
-        font-weight: bold;
-        text-decoration: underline;
-    }
-
-    /* Remove hover effect */
-    #primerListTable tr:hover {
-        background-color: inherit !important;
-    }
-
-    /* Set all rows to white background */
-    #primerListTable tr {
-        background-color: white !important;
-    }
-
-    /* Remove any outer borders or shadows from the menu list container */
-    .menu-list {
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Remove border introduced by DataTables scroll feature */
-    .dataTables_scroll {
-        border: none !important;
-    }
-
-    /* Style for selected rows */
-    tr.selected {
-        background-color: hsl(171.1, 100%, 40.98%) !important;
-    }
-
-    #primerListTable {
-        user-select: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-    }
-
-    #primerListTable tbody tr.selected td {
-        background-color: hsl(171.1, 100%, 40.98%) !important;
-    }
-
-    /* Style for the sidebars */
-    .sidebar {
-        float: left;
-        padding: 1em 2em 1em 0;
-    }
-
-    .sidebar:first-of-type {
-        width: 20%; /* Die Breite der ersten (linken) Sidebar */
-    }
-
-    .sidebar:last-of-type {
-        width: 80%; /* Die Breite der zweiten (rechten) Sidebar */
-    }
-</style>
-
-<!-- Original Sidebar (Primer Lists) -->
-<div class="sidebar">
-    <aside class="menu">
-        <p class="menu-label">
-            Primer Lists
-        </p>
-        <ul class="menu-list">
-
-            <!-- Using DataTables to display the primer list -->
-            <table id="primerListTable" class="table is-fullwidth">
-                <tbody>
-                    {% for primer_list in primer_lists %}
-                        {% if primer_list.visibility.lower() == 'public' or primer_list.visibility.lower() == 'standard' or (primer_list.visibility.lower() == 'private' and primer_list.user_id == current_user.id) %}
-                            <tr data-primer-list-id="{{ primer_list.id }}">
-                                <td>{{ primer_list.name }}</td>
-                                <td>{{ primer_list.visibility }}</td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-
-                </tbody>
-            </table>
+<div class="columns">
+    <!-- Sidebar für Primer Listen -->
+    <div class="column is-3">
+        <aside class="menu">
+            <p class="menu-label">
+                Primer Lists
+            </p>
+            <ul class="menu-list" id="primer-lists">
+                <!-- Primer Listen werden hier dynamisch eingefügt -->
+            </ul>
             <br>
             <!-- Button, um das modale Fenster zu öffnen -->
-            <button class="button is-primary" onclick="openModal()">New Primer-List</button>
-        </ul>
-    </aside>
-</div>
+            <button class="button is-primary" id="open-modal-button">New Primer-List</button>
+        </aside>
+    </div>
 
-<!-- New Sidebar (For new DataTable) -->
-<div class="sidebar">
-    <aside class="menu">
-        <p class="menu-label">
-            Primers
-        </p>
-        <ul class="menu-list">
-            <!-- Using DataTables for the new table -->
-            <table id="PrimerTable" class="table is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>Application</th>
-                        <th>PCR</th>
-                        <th>Target</th>
-                        <th>Oligos</th>
-                        <th>Sequence</th>
-                        <th>Box</th>
-                        <th>Position</th>
-                        <th>Reference</th>
-                        <th>Comment</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- The rows will be dynamically added by DataTables -->
-                </tbody>
-            </table>
-        </ul>
-    </aside>
+    <!-- Tabelle für Primer -->
+    <div class="column">
+        <aside class="menu">
+            <p class="menu-label">
+                Primers
+            </p>
+            <ul class="menu-list">
+                <table id="PrimerTable" class="table is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>PCR</th>
+                            <th>Target</th>
+                            <th>Oligos</th>
+                            <th>Sequence</th>
+                            <th>Box</th>
+                            <th>Position</th>
+                            <th>Reference</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Die Zeilen werden dynamisch von DataTables hinzugefügt -->
+                    </tbody>
+                </table>
+            </ul>
+        </aside>
+    </div>
 </div>
 
 <!-- Modales Fenster -->
@@ -141,7 +63,7 @@
   <div class="modal-card">
     <header class="modal-card-head">
       <p class="modal-card-title">Neue Primer-Liste</p>
-      <button class="delete" aria-label="close" onclick="closeModal()"></button>
+      <button class="delete" aria-label="close" id="close-modal-button"></button>
     </header>
     <section class="modal-card-body">
       <form id="new-primer-list-form">
@@ -163,7 +85,7 @@
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary" type="button" onclick="savePrimerList()">Speichern</button>
+            <button class="button is-primary" type="button" id="save-primer-list-button">Speichern</button>
           </div>
         </div>
       </form>
@@ -171,146 +93,23 @@
   </div>
 </div>
 
-<!-- Placeholder for additional content, if needed -->
+<!-- Platzhalter für zusätzlichen Inhalt, falls benötigt -->
 <div class="content" style="clear: both;">
-    <!-- Any additional content can go here -->
+    <!-- Hier kann zusätzlicher Inhalt hinzugefügt werden -->
 </div>
+
+<script type="text/javascript">
+    var primerLists = {{ primer_lists | tojson }};
+    var currentUserId = {{ current_user.id | tojson }};
+</script>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    var groupColumn = 1;  // This should be 1 for the Visibility column, since columns are 0-indexed
-    var table = $('#primerListTable').DataTable({
-        columnDefs: [{ visible: false, targets: groupColumn }],
-        order: [[groupColumn, 'asc'], [0, 'asc']],
-        paging: false,
-        searching: false,
-        bInfo: false,
-        ordering: false,
-        scrollCollapse: true,
-        scrollY: '50vh',
-        drawCallback: function (settings) {
-            var api = this.api();
-            var rows = api.rows({ page: 'current' }).nodes();
-            var last = null;
+{{ super() }}
+<script src="{{ url_for('static', filename='scripts_primer.js') }}"></script>
+{% endblock %}
 
-            api.column(groupColumn, { page: 'current' })
-                .data()
-                .each(function (group, i) {
-                    if (last !== group) {
-                        $(rows)
-                            .eq(i)
-                            .before(
-                                '<tr class="group"><td colspan="2">' +
-                                    group +
-                                    '</td></tr>'
-                            );
-
-                        last = group;
-                    }
-                });
-        }
-    });
-
-    // Click event listener for row selection, excluding group rows
-    $('#primerListTable tbody').on('click', 'tr:not(.group)', function() {
-        console.log("Row clicked!");
-
-        if ($(this).hasClass('selected')) {
-            $(this).removeClass('selected');
-        } else {
-            $('#primerListTable tbody tr.selected').removeClass('selected');
-            $(this).addClass('selected');
-        }
-
-        // Log the status of .selected class
-        console.log("Selected class status:", $(this).hasClass('selected'));
-
-        // Fetch the associated primers based on the clicked primer list
-        var primerListId = $(this).data('primer-list-id');
-        $.ajax({
-            url: '/get-primers-for-list/' + primerListId,
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                // Update the right DataTable with the fetched primers
-                var newTable = $('#PrimerTable').DataTable();
-                newTable.clear().draw();
-                data.forEach(function(primer) {
-                    newTable.row.add([
-                        primer.application,
-                        primer.pcr,
-                        primer.target,
-                        primer.oligos,
-                        primer.sequence,
-                        primer.box,
-                        primer.position,
-                        primer.reference,
-                        primer.comment
-                    ]).draw();
-                });
-            },
-            error: function(error) {
-                console.error("Error fetching associated primers:", error);
-            }
-        });
-    });
-
-    // Initialize the new DataTable
-    $('#PrimerTable').DataTable({
-        paging: false,
-        searching: false,
-        bInfo: false,
-        ordering: false,
-        scrollCollapse: true,
-        scrollY: '50vh'
-    });
-
-    function openModal() {
-        document.getElementById('modal').classList.add('is-active');
-    }
-
-    function closeModal() {
-        document.getElementById('modal').classList.remove('is-active');
-    }
-
-    function savePrimerList() {
-        var form = document.getElementById('new-primer-list-form');
-        var formData = new FormData(form);
-
-        fetch('/add_primer_list', {
-            method: 'POST',
-            body: formData,
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                console.log('Primer-Liste erfolgreich gespeichert:', data);
-                closeModal();
-
-                // Fügen Sie den neuen Eintrag zur Tabelle hinzu
-                var table = $('#primerListTable').DataTable();
-                table.row.add([
-                    data.primer_list.name,
-                    data.primer_list.visibility
-                ]).draw();
-
-                // Zeigen Sie die Erfolgsmeldung an
-                var notification = '<div class="notification is-success">Primer-Liste erfolgreich erstellt!</div>';
-                $('.section').prepend(notification);
-
-                // Aktualisieren Sie die Tabelle, um Sortierung und Gruppierung anzuwenden
-                table.draw();
-                location.reload();  // Seite neu laden
-            } else {
-                console.error('Fehler beim Speichern der Primer-Liste:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Fehler beim Speichern der Primer-Liste:', error);
-        });
-    }
-
-</script>
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles_primer.css') }}">
 {% endblock %}

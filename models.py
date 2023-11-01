@@ -70,6 +70,8 @@ class Primer(db.Model):
             'position': self.position,
             'reference': self.reference,
             'comment': self.comment
+
+
         }
 class PrimerList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,3 +80,14 @@ class PrimerList(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     primers = db.relationship('Primer', secondary=primer_list_association, lazy='subquery',
                               backref=db.backref('lists', lazy=True))
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializable format"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'visibility': self.visibility,
+            'user_id': self.user_id,
+            'primers': [primer.serialize for primer in self.primers]
+        }

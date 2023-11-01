@@ -1,335 +1,316 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h2 class="is-size-5 custom-heading">Primers</h2>
-<div class="content-wrapper">
-    <!-- Sidebar for displaying Primer Lists -->
-    <aside class="primer-lists-sidebar menu">
-        <p class="menu-label">
-            Primer-Listen
-        </p>
-        <ul class="menu-list" id="primerLists" style="cursor: pointer;"></ul>
-        <div class="field">
-            <input class="input" type="text" placeholder="Neue Liste" id="newListName">
-        </div>
-        <div class="field">
-            <label class="radio">
-                <input type="radio" name="listVisibility" value="private" checked> Privat
-            </label>
-            <label class="radio">
-                <input type="radio" name="listVisibility" value="public"> Öffentlich
-            </label>
-        </div>
-        <div class="field">
-            <button class="button is-success" id="createNewListButton">Erstellen</button>
-        </div>
-    </aside>
-
-    <!-- Primers Table -->
-    <div class="primer-table-container">
-        <div class="buttons">
-            <a href="{{ url_for('add_primer') }}" class="button is-primary">Neu</a>
-            <button id="delete-button" class="button is-danger">Löschen</button>
-            <button type="button" class="button is-success" id="addToListButton">Zur Liste hinzufügen</button>
-        </div>
-        <table class="table is-fullwidth is-striped is-spaced is-hoverable" id="primers-table">
-            <thead>
-                <tr>
-                    <th style="text-align:center;"><input type="checkbox" id="select-all"></th>
-                    <th>ID</th>
-                    <th>Anwendung</th>
-                    <th>PCR</th>
-                    <th>Ziel</th>
-                    <th>Oligos</th>
-                    <th>Sequenz</th>
-                    <th>Box</th>
-                    <th>Position</th>
-                    <th>Referenz</th>
-                    <th>Kommentar</th>
-                    <th>Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for primer in primers %}
-                <tr>
-                    <td style="text-align:center;"><input type="checkbox" class="primer-checkbox" value="{{ primer.id }}"></td>
-                    <td>{{ primer.id }}</td>
-                    <td>{{ primer.application }}</td>
-                    <td>{{ primer.pcr }}</td>
-                    <td>{{ primer.target }}</td>
-                    <td>{{ primer.oligos }}</td>
-                    <td>{{ primer.sequence }}</td>
-                    <td>{{ primer.box }}</td>
-                    <td>{{ primer.position }}</td>
-                    <td>{{ primer.reference }}</td>
-                    <td>{{ primer.comment }}</td>
-                    <td>
-                        <a href="{{ url_for('edit_primer', primer_id=primer.id) }}" class="button is-small is-primary">Bearbeiten</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Modal to select the primer list -->
-    <div class="modal" id="addToListModal">
-      <div class="modal-background"></div>
-      <div class="modal-card">
-        <header class="modal-card-head">
-          <p class="modal-card-title">Primer zu Liste hinzufügen</p>
-          <button class="delete" aria-label="close" id="closeModal"></button>
-        </header>
-        <section class="modal-card-body">
-          <div class="field">
-            <label class="label">Liste auswählen:</label>
-            <div class="control">
-              <div class="select" id="listSelectContainer"></div>
-            </div>
-          </div>
-        </section>
-        <footer class="modal-card-foot">
-          <button class="button is-success" id="confirmAddToList">Hinzufügen</button>
-          <button class="button" id="cancelAddToList">Abbrechen</button>
-        </footer>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="notification is-{{ category }}">
+        {{ message }}
       </div>
-    </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+<!-- Additional styles for the table -->
+<style>
+    #primerListTable, #primerListTable thead, #primerListTable tbody, #primerListTable tfoot, #primerListTable tr, #primerListTable th, #primerListTable td {
+        border: none !important;
+        border-collapse: collapse;
+    }
+
+    #primerListTable .group {
+        font-weight: bold;
+        text-decoration: underline;
+    }
+
+    /* Remove hover effect */
+    #primerListTable tr:hover {
+        background-color: inherit !important;
+    }
+
+    /* Set all rows to white background */
+    #primerListTable tr {
+        background-color: white !important;
+    }
+
+    /* Remove any outer borders or shadows from the menu list container */
+    .menu-list {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove border introduced by DataTables scroll feature */
+    .dataTables_scroll {
+        border: none !important;
+    }
+
+    /* Style for selected rows */
+    tr.selected {
+        background-color: hsl(171.1, 100%, 40.98%) !important;
+    }
+
+    #primerListTable {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    #primerListTable tbody tr.selected td {
+        background-color: hsl(171.1, 100%, 40.98%) !important;
+    }
+
+    /* Style for the sidebars */
+    .sidebar {
+        float: left;
+        padding: 1em 2em 1em 0;
+    }
+
+    .sidebar:first-of-type {
+        width: 20%; /* Die Breite der ersten (linken) Sidebar */
+    }
+
+    .sidebar:last-of-type {
+        width: 80%; /* Die Breite der zweiten (rechten) Sidebar */
+    }
+</style>
+
+<!-- Original Sidebar (Primer Lists) -->
+<div class="sidebar">
+    <aside class="menu">
+        <p class="menu-label">
+            Primer Lists
+        </p>
+        <ul class="menu-list">
+
+            <!-- Using DataTables to display the primer list -->
+            <table id="primerListTable" class="table is-fullwidth">
+                <tbody>
+                    {% for primer_list in primer_lists %}
+                        {% if primer_list.visibility.lower() == 'public' or primer_list.visibility.lower() == 'standard' or (primer_list.visibility.lower() == 'private' and primer_list.user_id == current_user.id) %}
+                            <tr data-primer-list-id="{{ primer_list.id }}">
+                                <td>{{ primer_list.name }}</td>
+                                <td>{{ primer_list.visibility }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+
+                </tbody>
+            </table>
+            <br>
+            <!-- Button, um das modale Fenster zu öffnen -->
+            <button class="button is-primary" onclick="openModal()">New Primer-List</button>
+        </ul>
+    </aside>
+</div>
+
+<!-- New Sidebar (For new DataTable) -->
+<div class="sidebar">
+    <aside class="menu">
+        <p class="menu-label">
+            Primers
+        </p>
+        <ul class="menu-list">
+            <!-- Using DataTables for the new table -->
+            <table id="PrimerTable" class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>PCR</th>
+                        <th>Target</th>
+                        <th>Oligos</th>
+                        <th>Sequence</th>
+                        <th>Box</th>
+                        <th>Position</th>
+                        <th>Reference</th>
+                        <th>Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- The rows will be dynamically added by DataTables -->
+                </tbody>
+            </table>
+        </ul>
+    </aside>
+</div>
+
+<!-- Modales Fenster -->
+<div class="modal" id="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Neue Primer-Liste</p>
+      <button class="delete" aria-label="close" onclick="closeModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <form id="new-primer-list-form">
+        <div class="field">
+          <label class="label">Name</label>
+          <div class="control">
+            <input class="input" type="text" name="name" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Visibility</label>
+          <div class="control">
+            <label class="radio"><input type="radio" name="visibility" value="Private" required> Private</label>
+            <label class="radio"><input type="radio" name="visibility" value="Public" required> Public</label>
+            {% if current_user.is_admin %}
+              <label class="radio"><input type="radio" name="visibility" value="Standard" required> Standard</label>
+            {% endif %}
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary" type="button" onclick="savePrimerList()">Speichern</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!-- Placeholder for additional content, if needed -->
+<div class="content" style="clear: both;">
+    <!-- Any additional content can go here -->
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const dataTable = $('#primers-table').DataTable({
-            lengthMenu: [[10, 25, 50, 100, 150, 200, 500, -1], [10, 25, 50, 100, 150, 200, 500, "Alle"]],
-            displayLength: 100,
-            dom: "<'row'<'col-sm-12'fB>>" +
-                 "<'row'<'col-sm-12'tr>>" +
-                 "<'row'<'col-sm-12 col-md-5'li><'col-sm-12 col-md-7'p>>",
-            buttons: [
-                'copy',
-                { extend: 'csv', text: 'Export CSV' },
-                { extend: 'excel', text: 'Export Excel' },
-                { extend: 'pdf', text: 'Export PDF' },
-                { extend: 'print', text: 'Drucken' }
-            ],
-            columnDefs: [ { orderable: false, targets: [0, 11] }, { visible: false, targets: [1] } ],
-            order: [[5, 'asc']]
-        });
+    var groupColumn = 1;  // This should be 1 for the Visibility column, since columns are 0-indexed
+    var table = $('#primerListTable').DataTable({
+        columnDefs: [{ visible: false, targets: groupColumn }],
+        order: [[groupColumn, 'asc'], [0, 'asc']],
+        paging: false,
+        searching: false,
+        bInfo: false,
+        ordering: false,
+        scrollCollapse: true,
+        scrollY: '50vh',
+        drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({ page: 'current' }).nodes();
+            var last = null;
 
-        document.getElementById('select-all').addEventListener('click', function() {
-            var checkboxes = dataTable.$('.primer-checkbox');
-            var isChecked = this.checked;
-            checkboxes.each(function() {
-                this.checked = isChecked;
-            });
-        });
+            api.column(groupColumn, { page: 'current' })
+                .data()
+                .each(function (group, i) {
+                    if (last !== group) {
+                        $(rows)
+                            .eq(i)
+                            .before(
+                                '<tr class="group"><td colspan="2">' +
+                                    group +
+                                    '</td></tr>'
+                            );
 
-        document.getElementById('primers-table').addEventListener('mousedown', function(event) {
-            event.preventDefault();
-        }, false);
-
-
-
-
-        function highlightSelectedItem(listItem) {
-            const allItems = document.querySelectorAll('.menu-list li');
-            allItems.forEach(item => {
-                item.style.fontWeight = 'normal';
-                item.style.backgroundColor = 'transparent';
-                item.style.color = 'inherit';
-            });
-
-            listItem.style.fontWeight = 'bold';
-            listItem.style.backgroundColor = '#f5f5f5';
-            listItem.style.color = 'blue';
-        }
-
-        function deletePrimerList(listId) {
-            if (confirm("Möchten Sie diese Liste wirklich löschen?")) {
-                fetch('/delete_primer_list/' + listId, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Liste erfolgreich gelöscht!');
-                        loadPrimerLists();
-                    } else {
-                        alert('Fehler beim Löschen der Liste: ' + data.message);
+                        last = group;
                     }
                 });
-            }
+        }
+    });
+
+    // Click event listener for row selection, excluding group rows
+    $('#primerListTable tbody').on('click', 'tr:not(.group)', function() {
+        console.log("Row clicked!");
+
+        if ($(this).hasClass('selected')) {
+            $(this).removeClass('selected');
+        } else {
+            $('#primerListTable tbody tr.selected').removeClass('selected');
+            $(this).addClass('selected');
         }
 
-        function loadPrimerLists() {
-            fetch('/get_primer_lists', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const primerListsContainer = document.getElementById('primerLists');
-                primerListsContainer.innerHTML = '<li><b>PRIMER STOCK</b></li><li id="allItems">Alle</li>';
+        // Log the status of .selected class
+        console.log("Selected class status:", $(this).hasClass('selected'));
 
-                primerListsContainer.innerHTML += '<br><li><b>Öffentlich</b></li>';
-                data.public_lists.forEach(list => {
-                    const listItem = document.createElement('li');
-                    listItem.id = `list_${list.id}`;
-                    listItem.textContent = list.name;
-                    listItem.addEventListener('click', function() {
-                        highlightSelectedItem(this);
-                        fetch(`/get_primers_for_list/${list.id}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                dataTable.clear().draw();
-                                data.primers.forEach(primer => {
-                                    dataTable.row.add([
-                                        `<input type="checkbox" class="primer-checkbox" value="${primer.id}">`,
-                                        primer.id,
-                                        primer.application,
-                                        primer.pcr,
-                                        primer.target,
-                                        primer.oligos,
-                                        primer.sequence,
-                                        primer.box,
-                                        primer.position,
-                                        primer.reference,
-                                        primer.comment,
-                                        `<a href="/edit_primer/${primer.id}" class="button is-small is-primary">Bearbeiten</a>`
-                                    ]).draw();
-                                });
-                            });
-                    });
-                    primerListsContainer.appendChild(listItem);
+        // Fetch the associated primers based on the clicked primer list
+        var primerListId = $(this).data('primer-list-id');
+        $.ajax({
+            url: '/get-primers-for-list/' + primerListId,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                // Update the right DataTable with the fetched primers
+                var newTable = $('#PrimerTable').DataTable();
+                newTable.clear().draw();
+                data.forEach(function(primer) {
+                    newTable.row.add([
+                        primer.application,
+                        primer.pcr,
+                        primer.target,
+                        primer.oligos,
+                        primer.sequence,
+                        primer.box,
+                        primer.position,
+                        primer.reference,
+                        primer.comment
+                    ]).draw();
                 });
-
-                primerListsContainer.innerHTML += '<br><li><b>Privat</b></li>';
-                data.private_lists.forEach(list => {
-                    const listItem = document.createElement('li');
-                    listItem.id = `list_${list.id}`;
-                    const deleteIcon = document.createElement('span');
-                    deleteIcon.innerHTML = '🗑️';
-                    deleteIcon.style.cursor = 'pointer';
-                    deleteIcon.addEventListener('click', function(event) {
-                        event.stopPropagation();
-                        deletePrimerList(list.id);
-                    });
-                    listItem.textContent = list.name + ' ';
-                    listItem.appendChild(deleteIcon);
-                    listItem.addEventListener('click', function() {
-                        highlightSelectedItem(this);
-                        // Code to filter the dataTable based on the selected list
-                        dataTable.search(list.name).draw();
-                    });
-                    primerListsContainer.appendChild(listItem);
-                });
-
-                // Add event listener for "Alle"
-                document.getElementById('allItems').addEventListener('click', function() {
-                    highlightSelectedItem(this);
-                    dataTable.search('').draw();
-                });
-            });
-        }
-
-        loadPrimerLists();
-
-        document.getElementById('createNewListButton').addEventListener('click', function() {
-            const newListName = document.getElementById('newListName').value;
-            const visibility = document.querySelector('input[name="listVisibility"]:checked').value;
-
-            if (!newListName) {
-                alert('Bitte geben Sie einen Namen für die neue Liste ein.');
-                return;
+            },
+            error: function(error) {
+                console.error("Error fetching associated primers:", error);
             }
-
-            fetch('/create_primer_list', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: newListName,
-                    visibility: visibility
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Neue Liste erfolgreich erstellt!');
-                    loadPrimerLists();
-                } else {
-                    alert('Fehler beim Erstellen der neuen Liste: ' + data.message);
-                }
-            });
-        });
-
-        document.getElementById('addToListButton').addEventListener('click', function() {
-            fetch('/get_primer_lists', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                let selectElem = document.createElement('select');
-                selectElem.name = "primerList";
-                selectElem.id = "primerList";
-
-                data.private_lists.concat(data.public_lists).forEach(list => {
-                    let option = document.createElement('option');
-                    option.value = list.id;
-                    option.textContent = list.name;
-                    selectElem.appendChild(option);
-                });
-
-                let container = document.getElementById('listSelectContainer');
-                container.innerHTML = '';
-                container.appendChild(selectElem);
-
-                document.getElementById('addToListModal').classList.add('is-active');
-            });
-        });
-
-        document.getElementById('closeModal').addEventListener('click', function() {
-            document.getElementById('addToListModal').classList.remove('is-active');
-        });
-
-        document.getElementById('cancelAddToList').addEventListener('click', function() {
-            document.getElementById('addToListModal').classList.remove('is-active');
-        });
-
-        document.getElementById('confirmAddToList').addEventListener('click', function() {
-            let selectedListId = document.getElementById('primerList').value;
-            let selectedPrimers = Array.from(document.querySelectorAll('.primer-checkbox:checked')).map(checkbox => checkbox.value);
-
-            fetch('/add_primers_to_list', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    list_id: selectedListId,
-                    primer_ids: selectedPrimers
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Primer erfolgreich zur Liste hinzugefügt!');
-                } else {
-                    alert('Fehler beim Hinzufügen der Primer zur Liste: ' + data.message);
-                }
-                document.getElementById('addToListModal').classList.remove('is-active');
-            });
         });
     });
+
+    // Initialize the new DataTable
+    $('#PrimerTable').DataTable({
+        paging: false,
+        searching: false,
+        bInfo: false,
+        ordering: false,
+        scrollCollapse: true,
+        scrollY: '50vh'
+    });
+
+    function openModal() {
+        document.getElementById('modal').classList.add('is-active');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('is-active');
+    }
+
+    function savePrimerList() {
+        var form = document.getElementById('new-primer-list-form');
+        var formData = new FormData(form);
+
+        fetch('/add_primer_list', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Primer-Liste erfolgreich gespeichert:', data);
+                closeModal();
+
+                // Fügen Sie den neuen Eintrag zur Tabelle hinzu
+                var table = $('#primerListTable').DataTable();
+                table.row.add([
+                    data.primer_list.name,
+                    data.primer_list.visibility
+                ]).draw();
+
+                // Zeigen Sie die Erfolgsmeldung an
+                var notification = '<div class="notification is-success">Primer-Liste erfolgreich erstellt!</div>';
+                $('.section').prepend(notification);
+
+                // Aktualisieren Sie die Tabelle, um Sortierung und Gruppierung anzuwenden
+                table.draw();
+                location.reload();  // Seite neu laden
+            } else {
+                console.error('Fehler beim Speichern der Primer-Liste:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Fehler beim Speichern der Primer-Liste:', error);
+        });
+    }
+
 </script>
 {% endblock %}
